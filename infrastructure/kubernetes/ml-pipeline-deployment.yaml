@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medimind-ml-pipeline
+  labels:
+    app: medimind-ml-pipeline
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: medimind-ml-pipeline
+  template:
+    metadata:
+      labels:
+        app: medimind-ml-pipeline
+    spec:
+      containers:
+      - name: ml-pipeline
+        image: medimind/ml-pipeline:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: PYTHON_ENV
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: medimind-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: medimind-secrets
+              key: redis-url
+        - name: MODEL_PATH
+          value: "/app/models"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: model-storage
+          mountPath: /app/models
+      volumes:
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: ml-models-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: medimind-ml-service
+spec:
+  selector:
+    app: medimind-ml-pipeline
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP

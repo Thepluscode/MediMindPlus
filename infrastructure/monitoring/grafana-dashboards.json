@@ -1,0 +1,350 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "MediMind Production Dashboard",
+    "tags": ["medimind", "production", "health-ai"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "ML Pipeline Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"medimind-ml-pipeline\"}[5m]))",
+            "legendFormat": "95th Percentile Latency",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(http_requests_total{job=\"medimind-ml-pipeline\"}[5m])",
+            "legendFormat": "Request Rate",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Latency (seconds)",
+            "min": 0
+          },
+          {
+            "label": "Requests/sec",
+            "min": 0
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "query": {
+                "queryType": "",
+                "refId": "A"
+              },
+              "reducer": {
+                "type": "last",
+                "params": []
+              },
+              "evaluator": {
+                "params": [0.2],
+                "type": "gt"
+              }
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "5m",
+          "frequency": "10s",
+          "handler": 1,
+          "name": "ML Pipeline High Latency",
+          "noDataState": "no_data",
+          "notifications": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "GPU Utilization",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_GPU_UTIL",
+            "legendFormat": "GPU {{gpu}} Utilization",
+            "refId": "A"
+          },
+          {
+            "expr": "DCGM_FI_DEV_MEM_COPY_UTIL",
+            "legendFormat": "GPU {{gpu}} Memory Utilization",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Utilization (%)",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "System Resources",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{namespace=\"medimind-production\"}[5m]) * 100",
+            "legendFormat": "CPU Usage - {{pod}}",
+            "refId": "A"
+          },
+          {
+            "expr": "container_memory_usage_bytes{namespace=\"medimind-production\"} / container_spec_memory_limit_bytes{namespace=\"medimind-production\"} * 100",
+            "legendFormat": "Memory Usage - {{pod}}",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Usage (%)",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "Database Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "pg_stat_database_numbackends{datname=\"medimind\"}",
+            "legendFormat": "Active Connections",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(pg_stat_database_xact_commit{datname=\"medimind\"}[5m])",
+            "legendFormat": "Transactions/sec",
+            "refId": "B"
+          },
+          {
+            "expr": "pg_stat_database_tup_returned{datname=\"medimind\"} / pg_stat_database_tup_fetched{datname=\"medimind\"}",
+            "legendFormat": "Cache Hit Ratio",
+            "refId": "C"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 5,
+        "title": "Error Rates",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=\"medimind-ml-pipeline\",status=~\"5..\"}[5m]) / rate(http_requests_total{job=\"medimind-ml-pipeline\"}[5m]) * 100",
+            "legendFormat": "ML Pipeline Error Rate",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(http_requests_total{job=\"medimind-backend\",status=~\"5..\"}[5m]) / rate(http_requests_total{job=\"medimind-backend\"}[5m]) * 100",
+            "legendFormat": "Backend Error Rate",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Error Rate (%)",
+            "min": 0
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "query": {
+                "queryType": "",
+                "refId": "A"
+              },
+              "reducer": {
+                "type": "last",
+                "params": []
+              },
+              "evaluator": {
+                "params": [5],
+                "type": "gt"
+              }
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "5m",
+          "frequency": "10s",
+          "handler": 1,
+          "name": "High Error Rate",
+          "noDataState": "no_data",
+          "notifications": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 6,
+        "title": "Prediction Accuracy",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "medimind_model_accuracy",
+            "legendFormat": "Model Accuracy",
+            "refId": "A"
+          },
+          {
+            "expr": "medimind_model_precision",
+            "legendFormat": "Model Precision",
+            "refId": "B"
+          },
+          {
+            "expr": "medimind_model_recall",
+            "legendFormat": "Model Recall",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 80
+                },
+                {
+                  "color": "green",
+                  "value": 90
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        }
+      },
+      {
+        "id": 7,
+        "title": "Business Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(medimind_predictions_total[5m])",
+            "legendFormat": "Predictions/sec",
+            "refId": "A"
+          },
+          {
+            "expr": "medimind_active_users",
+            "legendFormat": "Active Users",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(medimind_revenue_total[1h])",
+            "legendFormat": "Revenue/hour",
+            "refId": "C"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 24
+        }
+      },
+      {
+        "id": 8,
+        "title": "Voice Analysis Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(voice_analysis_duration_seconds_bucket[5m]))",
+            "legendFormat": "Voice Analysis Latency (95th)",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(voice_analysis_total[5m])",
+            "legendFormat": "Voice Analyses/sec",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        }
+      },
+      {
+        "id": 9,
+        "title": "Auto-scaling Status",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "kube_deployment_status_replicas{deployment=\"ml-pipeline\",namespace=\"medimind-production\"}",
+            "legendFormat": "ML Pipeline Replicas",
+            "refId": "A"
+          },
+          {
+            "expr": "kube_deployment_status_replicas{deployment=\"backend\",namespace=\"medimind-production\"}",
+            "legendFormat": "Backend Replicas",
+            "refId": "B"
+          },
+          {
+            "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\"}",
+            "legendFormat": "Ready Nodes",
+            "refId": "C"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "",
+    "title": "MediMind Production Dashboard",
+    "uid": "medimind-prod",
+    "version": 1,
+    "weekStart": ""
+  }
+}

@@ -1,0 +1,369 @@
+openapi: 3.0.0
+info:
+  title: MediMind ML API
+  description: |
+    This API provides machine learning capabilities for health risk prediction and analysis.
+    It processes multi-omics data, digital biomarkers, and other health metrics to provide
+    personalized health risk assessments and recommendations.
+  version: 1.0.0
+  contact:
+    name: MediMind Support
+    email: support@medimind.ai
+    url: https://medimind.ai/support
+  license:
+    name: Proprietary
+    url: https://medimind.ai/license
+servers:
+  - url: https://api.medimind.ai/v1
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Development server
+
+tags:
+  - name: Health
+    description: Health check and service status
+  - name: Predictions
+    description: Health risk prediction endpoints
+  - name: Voice Analysis
+    description: Voice-based health analysis
+
+paths:
+  /ml/health:
+    get:
+      tags: [Health]
+      summary: Check service health
+      description: Returns the current health status of the ML service
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Service is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /ml/analyze:
+    post:
+      tags: [Predictions]
+      summary: Analyze patient health data
+      description: |
+        Processes patient health data and returns risk predictions and recommendations.
+        This endpoint accepts comprehensive health data including multi-omics, digital biomarkers,
+        and clinical measurements.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientData'
+      responses:
+        '200':
+          description: Successful analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskPrediction'
+        '400':
+          description: Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ml/analyze-voice:
+    post:
+      tags: [Voice Analysis]
+      summary: Analyze voice features
+      description: |
+        Analyzes voice recordings to detect health indicators and potential conditions.
+        This endpoint processes acoustic features extracted from voice samples.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceFeatures'
+      responses:
+        '200':
+          description: Voice analysis results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceAnalysis'
+        '400':
+          description: Invalid voice features
+        '500':
+          description: Analysis failed
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          example: healthy
+        version:
+          type: string
+          example: "1.0.0"
+        timestamp:
+          type: string
+          format: date-time
+        dependencies:
+          type: object
+          properties:
+            database:
+              type: string
+              enum: [ok, error]
+            gpu:
+              type: string
+              enum: [available, unavailable]
+        metrics:
+          type: object
+          properties:
+            uptime_seconds:
+              type: number
+            request_count:
+              type: integer
+            error_count:
+              type: integer
+            error_rate_percent:
+              type: number
+            avg_prediction_time_ms:
+              type: number
+
+    PatientData:
+      type: object
+      required:
+        - user_id
+        - age
+        - gender
+      properties:
+        user_id:
+          type: string
+          description: Unique identifier for the patient
+          example: "user_123"
+        age:
+          type: integer
+          minimum: 0
+          maximum: 120
+          example: 45
+        gender:
+          type: string
+          enum: [male, female, other]
+          example: "male"
+        bmi:
+          type: number
+          format: float
+          minimum: 10
+          maximum: 100
+          example: 24.5
+        heart_rate:
+          type: array
+          items:
+            type: number
+          minItems: 1
+          example: [72, 71, 73, 72, 70]
+        blood_pressure:
+          type: array
+          items:
+            type: object
+            properties:
+              systolic:
+                type: integer
+                minimum: 70
+                maximum: 250
+              diastolic:
+                type: integer
+                minimum: 40
+                maximum: 150
+        sleep_data:
+          type: object
+          properties:
+            duration:
+              type: number
+              description: Sleep duration in hours
+              example: 7.5
+            efficiency:
+              type: number
+              minimum: 0
+              maximum: 1
+              example: 0.85
+        activity_data:
+          type: object
+          properties:
+            steps:
+              type: integer
+              minimum: 0
+              example: 8500
+            calories:
+              type: number
+              minimum: 0
+              example: 2400
+        voice_features:
+          $ref: '#/components/schemas/VoiceFeatures'
+        genetic_markers:
+          type: object
+          additionalProperties:
+            type: number
+            minimum: 0
+            maximum: 1
+          example:
+            BRCA1: 0.0
+            APOE_E4: 0.0
+        lab_results:
+          type: object
+          additionalProperties:
+            oneOf:
+              - type: number
+              - type: string
+          example:
+            glucose: 95
+            cholesterol: 180
+            hba1c: 5.4
+
+    RiskPrediction:
+      type: object
+      properties:
+        prediction_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        user_id:
+          type: string
+          example: "user_123"
+        disease_risks:
+          type: object
+          additionalProperties:
+            type: number
+            minimum: 0
+            maximum: 1
+          example:
+            cardiovascular_disease: 0.15
+            diabetes_type2: 0.08
+        overall_risk_score:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.12
+        confidence_level:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.85
+        risk_factors:
+          type: array
+          items:
+            type: string
+          example: ["elevated_ldl", "family_history"]
+        recommendations:
+          type: array
+          items:
+            type: string
+          example: ["exercise_regularly", "reduce_salt_intake"]
+        prediction_timestamp:
+          type: string
+          format: date-time
+        model_version:
+          type: string
+          example: "1.0.0"
+
+    VoiceFeatures:
+      type: object
+      required:
+        - audio_features
+      properties:
+        audio_features:
+          type: object
+          properties:
+            pitch_mean:
+              type: number
+              description: Mean fundamental frequency in Hz
+              example: 150.5
+            jitter:
+              type: number
+              description: Frequency perturbation
+              example: 0.01
+            shimmer:
+              type: number
+              description: Amplitude perturbation
+              example: 0.05
+            hnr:
+              type: number
+              description: Harmonics-to-noise ratio in dB
+              example: 20.5
+
+    VoiceAnalysis:
+      type: object
+      properties:
+        analysis_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        stress_level:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.3
+        vocal_health:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.85
+        respiratory_health:
+          type: number
+          minimum: 0
+          maximum: 1
+          example: 0.92
+        analysis_timestamp:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Invalid input data"
+        message:
+          type: string
+          example: "The request contains invalid data"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "age"
+              message:
+                type: string
+                example: "must be a positive number"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2023-01-01T12:00:00Z"

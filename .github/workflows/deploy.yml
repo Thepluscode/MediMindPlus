@@ -1,0 +1,126 @@
+name: Deploy MediMind
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  ECR_REPOSITORY_BACKEND: medimind/backend
+  ECR_REPOSITORY_ML: medimind/ml-pipeline
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: medimind_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+        cache-dependency-path: ml-pipeline/requirements.txt
+
+    - name: Install Backend Dependencies
+      working-directory: backend
+      run: npm ci
+
+    - name: Install ML Pipeline Dependencies
+      working-directory: ml-pipeline
+      run: pip install -r requirements.txt
+
+    - name: Run Backend Tests
+      working-directory: backend
+      run: npm test
+      env:
+        NODE_ENV: test
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: medimind_test
+        DB_USER: postgres
+        DB_PASSWORD: password
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+
+    - name: Run ML Pipeline Tests
+      working-directory: ml-pipeline
+      run: python -m pytest tests/
+      env:
+        PYTHON_ENV: test
+        DATABASE_URL: postgresql://postgres:password@localhost:5432/medimind_test
+        REDIS_URL: redis://localhost:6379
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build and push Backend image
+      working-directory: backend
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$GITHUB_SHA .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$GITHUB_SHA
+        docker tag $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$GITHUB_SHA $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:latest
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:latest
+
+    - name: Build and push ML Pipeline image
+      working-directory: ml-pipeline
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_ML:$GITHUB_SHA .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_ML:$GITHUB_SHA
+        docker tag $ECR_REGISTRY/$ECR_REPOSITORY_ML:$GITHUB_SHA $ECR_REGISTRY/$ECR_REPOSITORY_ML:latest
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_ML:latest
+
+    - name: Deploy to ECS
+      run: |
+        aws ecs update-service --cluster medimind-cluster --service medimind-backend --force-new-deployment
+        aws ecs update-service --cluster medimind-cluster --service medimind-ml-pipeline --force-new-deployment

@@ -1,0 +1,43 @@
+
+# ========================
+# Python
+# ========================
+venv/
+venv_new/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+
+# ========================
+# Jupyter Notebook
+# ========================
+.ipynb_checkpoints
+
+# ========================
+# Node.js
+# ========================
+node_modules/
+.cache/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# ========================
+# OS files
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# Large ML Libraries
+# ========================
+*.dylib
+*.so
+*.dll
+*.pkl
+*.pt
+*.ckpt
+*.h5
+*.tflite
+*.onnx

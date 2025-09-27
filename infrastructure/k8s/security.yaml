@@ -1,0 +1,368 @@
+# MediMind Security Configuration
+# RBAC, Network Policies, Pod Security Standards, and Secrets Management
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: medimind-production
+  labels:
+    name: medimind-production
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+# External Secrets Operator for AWS Secrets Manager integration
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: aws-secrets-manager
+  namespace: medimind-production
+spec:
+  provider:
+    aws:
+      service: SecretsManager
+      region: us-west-2
+      auth:
+        jwt:
+          serviceAccountRef:
+            name: external-secrets-sa
+
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: database-secret
+  namespace: medimind-production
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: SecretStore
+  target:
+    name: database-secret
+    creationPolicy: Owner
+  data:
+  - secretKey: host
+    remoteRef:
+      key: medimind/database/password
+      property: host
+  - secretKey: port
+    remoteRef:
+      key: medimind/database/password
+      property: port
+  - secretKey: dbname
+    remoteRef:
+      key: medimind/database/password
+      property: dbname
+  - secretKey: username
+    remoteRef:
+      key: medimind/database/password
+      property: username
+  - secretKey: password
+    remoteRef:
+      key: medimind/database/password
+      property: password
+
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: redis-secret
+  namespace: medimind-production
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: SecretStore
+  target:
+    name: redis-secret
+    creationPolicy: Owner
+  data:
+  - secretKey: host
+    remoteRef:
+      key: medimind/redis/auth
+      property: host
+  - secretKey: port
+    remoteRef:
+      key: medimind/redis/auth
+      property: port
+  - secretKey: auth_token
+    remoteRef:
+      key: medimind/redis/auth
+      property: auth_token
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jwt-secret
+  namespace: medimind-production
+type: Opaque
+data:
+  secret: <BASE64_ENCODED_JWT_SECRET>
+
+---
+# RBAC Configuration
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: medimind-cluster-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods", "nodes"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: medimind-cluster-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: medimind-cluster-role
+subjects:
+- kind: ServiceAccount
+  name: ml-pipeline-sa
+  namespace: medimind-production
+- kind: ServiceAccount
+  name: backend-sa
+  namespace: medimind-production
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: medimind-production
+  name: medimind-role
+rules:
+- apiGroups: [""]
+  resources: ["secrets", "configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: medimind-role-binding
+  namespace: medimind-production
+subjects:
+- kind: ServiceAccount
+  name: ml-pipeline-sa
+  namespace: medimind-production
+- kind: ServiceAccount
+  name: backend-sa
+  namespace: medimind-production
+roleRef:
+  kind: Role
+  name: medimind-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Service Account for External Secrets
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-secrets-sa
+  namespace: medimind-production
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/external-secrets-role
+
+---
+# Network Policies for micro-segmentation
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: medimind-production
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: medimind-production
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+---
+# Pod Security Policy (deprecated but shown for reference)
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: medimind-psp
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+
+---
+# Security Context Constraints for OpenShift (if applicable)
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: medimind-scc
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegedContainer: false
+allowedCapabilities: null
+defaultAddCapabilities: null
+requiredDropCapabilities:
+- KILL
+- MKNOD
+- SETUID
+- SETGID
+fsGroup:
+  type: RunAsAny
+readOnlyRootFilesystem: false
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: MustRunAs
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- persistentVolumeClaim
+- projected
+- secret
+
+---
+# Falco Security Rules (Custom Resource)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: falco-rules
+  namespace: medimind-production
+data:
+  medimind_rules.yaml: |
+    - rule: Unauthorized Process in Container
+      desc: Detect unauthorized processes in MediMind containers
+      condition: >
+        spawned_process and container and
+        (container.image.repository contains "medimind") and
+        not proc.name in (node, python, python3, uvicorn, gunicorn, nginx)
+      output: >
+        Unauthorized process in MediMind container
+        (user=%user.name command=%proc.cmdline container=%container.name image=%container.image.repository)
+      priority: WARNING
+      tags: [container, process, medimind]
+
+    - rule: Sensitive File Access in Container
+      desc: Detect access to sensitive files in MediMind containers
+      condition: >
+        open_read and container and
+        (container.image.repository contains "medimind") and
+        (fd.name contains "/etc/passwd" or
+         fd.name contains "/etc/shadow" or
+         fd.name contains "/etc/ssh" or
+         fd.name contains "/.env")
+      output: >
+        Sensitive file accessed in MediMind container
+        (user=%user.name file=%fd.name container=%container.name image=%container.image.repository)
+      priority: HIGH
+      tags: [container, filesystem, medimind]
+
+    - rule: Network Connection to Unexpected Port
+      desc: Detect network connections to unexpected ports from MediMind containers
+      condition: >
+        outbound and container and
+        (container.image.repository contains "medimind") and
+        not fd.sport in (80, 443, 5432, 6379, 8000, 3000, 5000)
+      output: >
+        Unexpected network connection from MediMind container
+        (user=%user.name connection=%fd.name container=%container.name image=%container.image.repository)
+      priority: WARNING
+      tags: [container, network, medimind]
+
+---
+# OPA Gatekeeper Constraints
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: medimindresourcelimits
+spec:
+  crd:
+    spec:
+      names:
+        kind: MediMindResourceLimits
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            maxCPU:
+              type: string
+            maxMemory:
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package medimindresourcelimits
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.cpu
+          msg := "Container must have CPU limits"
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.memory
+          msg := "Container must have memory limits"
+        }
+
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: MediMindResourceLimits
+metadata:
+  name: must-have-resource-limits
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+    namespaces: ["medimind-production"]
+  parameters:
+    maxCPU: "4000m"
+    maxMemory: "8Gi"

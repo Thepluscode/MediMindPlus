@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediMind Enterprise Platform - Live Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .service-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .service-icon {
+            font-size: 2.5rem;
+            margin-right: 15px;
+        }
+        
+        .service-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .service-description {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .revenue-model {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .demo-title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+        
+        .prediction-demo {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .prediction-input {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .input-group input, .input-group select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .predict-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .predict-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .risk-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .risk-level {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .risk-low { background: #d4edda; color: #155724; }
+        .risk-moderate { background: #fff3cd; color: #856404; }
+        .risk-high { background: #f8d7da; color: #721c24; }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 MediMind Enterprise Platform</h1>
+            <p>AI-Powered Health Monitoring for Insurance, Pharma & Health Systems</p>
+        </div>
+        
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">🏥</div>
+                    <div>
+                        <div class="service-title">
+                            <span class="status-indicator"></span>
+                            Insurance API Service
+                        </div>
+                        <div style="color: #666; font-size: 0.9rem;">Port 8002 • Running</div>
+                    </div>
+                </div>
+                <div class="service-description">
+                    Comprehensive health monitoring for insurance members with predictive analytics and early disease detection.
+                </div>
+                <div class="revenue-model">
+                    💰 $20/member/month • 5M+ users = $100M/month potential
+                </div>
+                <div style="color: #666; font-size: 0.9rem;">
+                    <strong>Target Partners:</strong> UnitedHealthcare, Aetna, Anthem, Blue Cross Blue Shield
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">🔬</div>
+                    <div>
+                        <div class="service-title">
+                            <span class="status-indicator"></span>
+                            Pharma Research API
+                        </div>
+                        <div style="color: #666; font-size: 0.9rem;">Port 8003 • Running</div>
+                    </div>
+                </div>
+                <div class="service-description">
+                    Early detection cohorts and clinical trial optimization for pharmaceutical research partnerships.
+                </div>
+                <div class="revenue-model">
+                    💰 $10M/study for early detection cohorts
+                </div>
+                <div style="color: #666; font-size: 0.9rem;">
+                    <strong>Target Partners:</strong> Pfizer, Roche, Novartis, Merck, Johnson & Johnson
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">🚀</div>
+                    <div>
+                        <div class="service-title">
+                            <span class="status-indicator"></span>
+                            Enterprise Demo Automation
+                        </div>
+                        <div style="color: #666; font-size: 0.9rem;">Port 8005 • Running</div>
+                    </div>
+                </div>
+                <div class="service-description">
+                    Self-service demo provisioning and ROI calculation tools that accelerate enterprise sales by 10x.
+                </div>
+                <div class="revenue-model">
+                    ⚡ 10x faster enterprise sales cycles
+                </div>
+                <div style="color: #666; font-size: 0.9rem;">
+                    <strong>Capabilities:</strong> Automated onboarding, ROI calculation, white-label solutions
+                </div>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-header">
+                    <div class="service-icon">🤖</div>
+                    <div>
+                        <div class="service-title">
+                            <span class="status-indicator"></span>
+                            AI/ML Prediction Engine
+                        </div>
+                        <div style="color: #666; font-size: 0.9rem;">Port 8001 • Running</div>
+                    </div>
+                </div>
+                <div class="service-description">
+                    Advanced machine learning models providing risk assessments for 10+ diseases with real-time predictions.
+                </div>
+                <div class="revenue-model">
+                    🧠 10+ Disease Risk Models • 70%+ Accuracy
+                </div>
+                <div style="color: #666; font-size: 0.9rem;">
+                    <strong>Models:</strong> Cardiovascular, Diabetes, Hypertension, Depression, Sleep Disorders
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2 class="demo-title">🎯 Live AI Prediction Demo</h2>
+            <div class="prediction-demo">
+                <div class="prediction-input">
+                    <div class="input-group">
+                        <label>Age</label>
+                        <input type="number" id="age" value="45" min="18" max="100">
+                    </div>
+                    <div class="input-group">
+                        <label>Gender</label>
+                        <select id="gender">
+                            <option value="female">Female</option>
+                            <option value="male">Male</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Heart Rate (BPM)</label>
+                        <input type="number" id="heartRate" value="85" min="40" max="200">
+                    </div>
+                    <div class="input-group">
+                        <label>Systolic BP</label>
+                        <input type="number" id="systolic" value="140" min="80" max="200">
+                    </div>
+                    <div class="input-group">
+                        <label>Diastolic BP</label>
+                        <input type="number" id="diastolic" value="90" min="50" max="120">
+                    </div>
+                </div>
+                <button class="predict-btn" onclick="runPrediction()">
+                    🔮 Generate AI Health Risk Assessment
+                </button>
+                <div id="results" class="results" style="display: none;">
+                    <h3 style="margin-bottom: 15px; color: #333;">🎯 AI Prediction Results</h3>
+                    <div id="predictionResults"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>🌟 MediMind Enterprise Platform - Revolutionizing Healthcare with AI</p>
+            <p>All services running and ready for enterprise partnerships</p>
+        </div>
+    </div>
+    
+    <script>
+        async function runPrediction() {
+            const age = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+            const heartRate = document.getElementById('heartRate').value;
+            const systolic = document.getElementById('systolic').value;
+            const diastolic = document.getElementById('diastolic').value;
+            
+            const requestData = {
+                user_id: "enterprise-demo-" + Date.now(),
+                age: parseInt(age),
+                gender: gender,
+                symptoms: ["general_checkup"],
+                vital_signs: {
+                    heart_rate: parseInt(heartRate),
+                    blood_pressure_systolic: parseInt(systolic),
+                    blood_pressure_diastolic: parseInt(diastolic)
+                }
+            };
+            
+            try {
+                const response = await fetch('http://localhost:8001/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                document.getElementById('results').innerHTML = 
+                    '<div style="color: red;">Error connecting to AI service. Please ensure the ML service is running on port 8001.</div>';
+                document.getElementById('results').style.display = 'block';
+            }
+        }
+        
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('predictionResults');
+            let html = `
+                <div style="margin-bottom: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px;">
+                    <strong>Overall Risk Score:</strong> ${(data.overall_risk_score * 100).toFixed(1)}% 
+                    <span class="risk-level risk-${data.overall_risk_level}">${data.overall_risk_level.toUpperCase()}</span>
+                </div>
+                <h4 style="margin-bottom: 15px;">Disease-Specific Risk Assessment:</h4>
+            `;
+            
+            data.disease_risks.forEach(risk => {
+                const percentage = (risk.risk_score * 100).toFixed(1);
+                html += `
+                    <div class="risk-item">
+                        <span><strong>${risk.disease.replace(/_/g, ' ').toUpperCase()}</strong></span>
+                        <div>
+                            <span style="margin-right: 10px;">${percentage}%</span>
+                            <span class="risk-level risk-${risk.risk_level}">${risk.risk_level.toUpperCase()}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                <div style="margin-top: 20px; padding: 15px; background: #f3e5f5; border-radius: 8px;">
+                    <strong>Prediction ID:</strong> ${data.prediction_id}<br>
+                    <strong>Model Version:</strong> ${data.model_version}<br>
+                    <strong>Confidence Score:</strong> ${(data.confidence_score * 100).toFixed(1)}%
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
