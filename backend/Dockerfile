@@ -1,5 +1,5 @@
 # backend/Dockerfile
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -15,26 +15,41 @@ RUN apk add --no-cache \
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production --legacy-peer-deps
+# Install all dependencies (including devDependencies for TypeScript build)
+RUN npm ci --legacy-peer-deps
 
 # Copy application code
 COPY . .
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S medimind -u 1001
+# Build TypeScript
+RUN npm run build
 
-# Change ownership of the app directory
-RUN chown -R medimind:nodejs /app
+# Production stage
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache postgresql-client
+
+# Copy package files and install production deps only
+COPY package*.json ./
+RUN npm ci --only=production --legacy-peer-deps
+
+# Copy compiled output from builder
+COPY --from=builder /app/dist ./dist
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S medimind -u 1001 && \
+    chown -R medimind:nodejs /app
 USER medimind
 
 # Expose port
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node healthcheck.js
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => r.statusCode === 200 ? process.exit(0) : process.exit(1)).on('error', () => process.exit(1))"
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]
