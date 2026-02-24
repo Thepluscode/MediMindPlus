@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const EventEmitter = require('events');
 const redis = require('redis');
+const logger = require('../utils/logger').default;
 
 class AIModelService extends EventEmitter {
     constructor(config) {
@@ -38,27 +39,40 @@ class AIModelService extends EventEmitter {
         await this.redisClient.connect();
         await this.loadModels();
         await this.startInferenceProcessor();
-        
-        console.log('AI Model Service initialized');
+
+        logger.info('AI Model Service initialized', {
+            service: 'ai',
+            modelCount: this.models.size
+        });
     }
     
     async loadModels() {
-        console.log('Loading AI models...');
-        
+        logger.info('Loading AI models', {
+            service: 'ai',
+            modelTypes: this.diseaseModels.length
+        });
+
         for (const diseaseType of this.diseaseModels) {
             try {
                 await this.loadDiseaseModel(diseaseType);
             } catch (error) {
-                console.error(`Failed to load model for ${diseaseType}:`, error);
+                logger.error('Failed to load model', {
+                    service: 'ai',
+                    diseaseType,
+                    error: error.message
+                });
                 // Load fallback model or use rule-based approach
                 await this.loadFallbackModel(diseaseType);
             }
         }
-        
+
         // Load ensemble meta-model
         await this.loadEnsembleModel();
-        
-        console.log(`Loaded ${this.models.size} AI models`);
+
+        logger.info('AI models loaded successfully', {
+            service: 'ai',
+            modelCount: this.models.size
+        });
     }
     
     async loadDiseaseModel(diseaseType) {
@@ -78,14 +92,22 @@ class AIModelService extends EventEmitter {
                     features: await this.loadFeatureConfig(diseaseType),
                     preprocessing: await this.loadPreprocessingConfig(diseaseType)
                 });
-                
-                console.log(`Loaded TensorFlow model for ${diseaseType}`);
+
+                logger.info('TensorFlow model loaded', {
+                    service: 'ai',
+                    diseaseType,
+                    modelVersion: modelInfo.version
+                });
             } else {
                 // Load Python model
                 await this.loadPythonModel(diseaseType);
             }
         } catch (error) {
-            console.error(`Error loading model for ${diseaseType}:`, error);
+            logger.error('Error loading model', {
+                service: 'ai',
+                diseaseType,
+                error: error.message
+            });
             throw error;
         }
     }
@@ -115,18 +137,26 @@ class AIModelService extends EventEmitter {
                 features: results[0].features,
                 preprocessing: results[0].preprocessing
             });
-            
-            console.log(`Loaded Python model for ${diseaseType}`);
+
+            logger.info('Python model loaded', {
+                service: 'ai',
+                diseaseType,
+                modelVersion: results[0].version || '1.0.0'
+            });
         } catch (error) {
-            console.error(`Failed to load Python model for ${diseaseType}:`, error);
+            logger.error('Failed to load Python model', {
+                service: 'ai',
+                diseaseType,
+                error: error.message
+            });
             throw error;
         }
     }
-    
+
     async loadFallbackModel(diseaseType) {
         // Load rule-based fallback model
         const ruleBasedModel = new RuleBasedModel(diseaseType);
-        
+
         this.models.set(diseaseType, {
             model: ruleBasedModel,
             type: 'rule_based',
@@ -134,8 +164,12 @@ class AIModelService extends EventEmitter {
             features: ruleBasedModel.getRequiredFeatures(),
             preprocessing: null
         });
-        
-        console.log(`Loaded fallback rule-based model for ${diseaseType}`);
+
+        logger.info('Fallback rule-based model loaded', {
+            service: 'ai',
+            diseaseType,
+            modelType: 'rule_based'
+        });
     }
     
     async loadEnsembleModel() {
@@ -242,22 +276,29 @@ class AIModelService extends EventEmitter {
                 await this.processInferenceQueue();
             }
         }, 100);
-        
-        console.log('Inference processor started');
+
+        logger.info('Inference processor started', {
+            service: 'ai',
+            queueCheckInterval: '100ms'
+        });
     }
-    
+
     async processInferenceQueue() {
         if (this.inferenceQueue.length === 0) return;
-        
+
         this.isProcessing = true;
-        
+
         // Process up to 10 predictions at once
         const batch = this.inferenceQueue.splice(0, 10);
-        
+
         try {
             await Promise.all(batch.map(prediction => this.processPrediction(prediction)));
         } catch (error) {
-            console.error('Error processing inference batch:', error);
+            logger.error('Error processing inference batch', {
+                service: 'ai',
+                error: error.message,
+                batchSize: batch.length
+            });
         }
         
         this.isProcessing = false;
@@ -292,7 +333,12 @@ class AIModelService extends EventEmitter {
                     const risk = await this.predictDiseaseRisk(diseaseType, preprocessedData);
                     diseaseRisks[diseaseType] = risk;
                 } catch (error) {
-                    console.error(`Error predicting ${diseaseType}:`, error);
+                    logger.error('Error predicting disease risk', {
+                        service: 'ai',
+                        diseaseType,
+                        predictionId: prediction.id,
+                        error: error.message
+                    });
                     diseaseRisks[diseaseType] = {
                         risk_score: 0.0,
                         confidence: 0.0,
@@ -359,9 +405,14 @@ class AIModelService extends EventEmitter {
                     timestamp: new Date()
                 })
             );
-            
+
             this.emit('predictionFailed', prediction);
-            console.error(`Prediction ${prediction.id} failed:`, error);
+            logger.error('Prediction failed', {
+                service: 'ai',
+                predictionId: prediction.id,
+                patientId: prediction.patientId,
+                error: error.message
+            });
         }
     }
     
@@ -611,14 +662,18 @@ class AIModelService extends EventEmitter {
                 model_version: modelInfo.version
             };
         } catch (error) {
-            console.error('TensorFlow prediction error:', error);
+            logger.error('TensorFlow prediction error', {
+                service: 'ai',
+                modelType: 'tensorflow',
+                error: error.message
+            });
             throw error;
         }
     }
-    
+
     async predictWithPython(diseaseType, modelInfo, data) {
         const pythonScript = path.join(__dirname, 'python', 'predict.py');
-        
+
         const options = {
             mode: 'json',
             pythonPath: this.pythonPath,
@@ -628,7 +683,7 @@ class AIModelService extends EventEmitter {
                 JSON.stringify(data)
             ]
         };
-        
+
         try {
             const results = await new Promise((resolve, reject) => {
                 PythonShell.run(pythonScript, options, (err, results) => {
@@ -636,10 +691,16 @@ class AIModelService extends EventEmitter {
                     else resolve(results);
                 });
             });
-            
+
             return results[0];
         } catch (error) {
-            console.error('Python prediction error:', error);
+            logger.error('Python prediction error', {
+                service: 'ai',
+                diseaseType,
+                modelType: 'python',
+                modelPath: modelInfo.modelPath,
+                error: error.message
+            });
             throw error;
         }
     }
@@ -837,7 +898,11 @@ class AIModelService extends EventEmitter {
     
     async storePredictionResults(prediction) {
         // This would store in the main database
-        console.log(`Storing prediction results for ${prediction.id}`);
+        logger.info('Storing prediction results', {
+            service: 'ai',
+            predictionId: prediction.id,
+            patientId: prediction.patientId
+        });
         // Implementation would depend on your database structure
     }
     
@@ -922,7 +987,12 @@ class RuleBasedModel {
             // Evaluate the condition (in production, use a safer evaluator)
             return eval(evaluableCondition);
         } catch (error) {
-            console.warn(`Error evaluating condition: ${condition}`, error);
+            logger.warn('Error evaluating condition', {
+                service: 'ai',
+                modelType: 'rule_based',
+                condition,
+                error: error.message
+            });
             return false;
         }
     }
@@ -984,7 +1054,11 @@ class FeatureEngineeringService {
                 try {
                     features[dataType] = await extractor.extract(patientData[dataType]);
                 } catch (error) {
-                    console.error(`Error extracting ${dataType} features:`, error);
+                    logger.error('Error extracting features', {
+                        service: 'ai',
+                        dataType,
+                        error: error.message
+                    });
                     features[dataType] = {};
                 }
             }
@@ -1280,24 +1354,37 @@ class ModelTrainingService {
             job.status = 'running';
             job.startTime = new Date();
             this.activeTraining.set(job.id, job);
-            
-            console.log(`Starting training job: ${job.id}`);
-            
+
+            logger.info('Starting training job', {
+                service: 'ai',
+                trainingId: job.id,
+                config: job.config
+            });
+
             // Execute Python training script
             const results = await this.runPythonTraining(job);
-            
+
             job.status = 'completed';
             job.endTime = new Date();
             job.metrics = results.metrics;
-            
-            console.log(`Training completed: ${job.id}`);
-            
+
+            logger.info('Training completed', {
+                service: 'ai',
+                trainingId: job.id,
+                duration: job.endTime - job.startTime,
+                metrics: results.metrics
+            });
+
         } catch (error) {
             job.status = 'failed';
             job.endTime = new Date();
             job.error = error.message;
-            
-            console.error(`Training failed: ${job.id}`, error);
+
+            logger.error('Training failed', {
+                service: 'ai',
+                trainingId: job.id,
+                error: error.message
+            });
         } finally {
             this.activeTraining.delete(job.id);
         }
@@ -1355,12 +1442,16 @@ class ModelValidationService {
     }
     
     async validateModel(modelId, validationData) {
-        console.log(`Starting validation for model: ${modelId}`);
-        
+        logger.info('Starting model validation', {
+            service: 'ai',
+            modelId,
+            validationDataSize: validationData.length
+        });
+
         try {
             const metrics = await this.calculateValidationMetrics(modelId, validationData);
             const passed = this.checkValidationThresholds(metrics);
-            
+
             const validationResult = {
                 modelId: modelId,
                 timestamp: new Date(),
@@ -1368,12 +1459,23 @@ class ModelValidationService {
                 passed: passed,
                 thresholds: this.validationThresholds
             };
-            
+
             this.validationMetrics.set(modelId, validationResult);
-            
+
+            logger.info('Model validation completed', {
+                service: 'ai',
+                modelId,
+                passed,
+                metrics
+            });
+
             return validationResult;
         } catch (error) {
-            console.error(`Validation failed for model ${modelId}:`, error);
+            logger.error('Validation failed for model', {
+                service: 'ai',
+                modelId,
+                error: error.message
+            });
             throw error;
         }
     }

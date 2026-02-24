@@ -2,6 +2,7 @@ const { EventEmitter } = require('events');
 const crypto = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
+const logger = require('../../utils/logger').default;
 const { ElectronicDataCapture } = require('./ElectronicDataCapture');
 const { RegulatoryComplianceManager } = require('./RegulatoryComplianceManager');
 const { StatisticalAnalysisEngine } = require('./StatisticalAnalysisEngine');
@@ -24,7 +25,11 @@ class ClinicalResearchPlatform extends EventEmitter {
         
         // Ensure data directory exists
         fs.mkdir(this.config.dataDir, { recursive: true })
-            .catch(err => console.error('Failed to create data directory:', err));
+            .catch(err => logger.error('Failed to create clinical data directory', {
+                service: 'clinical-research',
+                dataDir: this.config.dataDir,
+                error: err.message
+            }));
     }
     
     async initialize() {
@@ -33,12 +38,17 @@ class ClinicalResearchPlatform extends EventEmitter {
             await this.regulatoryCompliance.initialize();
             await this.statisticalAnalysis.initialize();
             await this.qualityAssurance.initialize();
-            
-            console.log('Clinical Research Platform initialized');
+
+            logger.info('Clinical Research Platform initialized', {
+                service: 'clinical-research'
+            });
             this.emit('initialized');
             return true;
         } catch (error) {
-            console.error('Failed to initialize Clinical Research Platform:', error);
+            logger.error('Failed to initialize Clinical Research Platform', {
+                service: 'clinical-research',
+                error: error.message
+            });
             throw error;
         }
     }
@@ -382,7 +392,11 @@ class ClinicalResearchPlatform extends EventEmitter {
             await fs.writeFile(filePath, data, 'utf8');
             return true;
         } catch (error) {
-            console.error('Failed to save study data:', error);
+            logger.error('Failed to save clinical study data', {
+                service: 'clinical-research',
+                studyId,
+                error: error.message
+            });
             throw error;
         }
     }
@@ -396,7 +410,11 @@ class ClinicalResearchPlatform extends EventEmitter {
             if (error.code === 'ENOENT') {
                 return null; // Study file doesn't exist
             }
-            console.error('Failed to load study data:', error);
+            logger.error('Failed to load clinical study data', {
+                service: 'clinical-research',
+                studyId,
+                error: error.message
+            });
             throw error;
         }
     }
@@ -418,13 +436,25 @@ class ClinicalResearchPlatform extends EventEmitter {
     
     async triggerSafetyHold(study, reason) {
         // TODO: Implement safety hold
-        console.warn(`SAFETY HOLD TRIGGERED for study ${study.id}: ${reason}`);
+        logger.warn('SAFETY HOLD TRIGGERED for clinical study', {
+            service: 'clinical-research',
+            studyId: study.id,
+            reason,
+            phase: study.phase,
+            enrollment: study.currentEnrollment
+        });
         this.emit('safetyHold', { study, reason });
     }
     
     async notifyDSMB(study, adverseEvent, safetyProfile) {
         // TODO: Implement DSMB notification
-        console.log('Notifying DSMB:', { studyId: study.id, adverseEventId: adverseEvent.id });
+        logger.info('Notifying DSMB of adverse event', {
+            service: 'clinical-research',
+            studyId: study.id,
+            adverseEventId: adverseEvent.id,
+            severity: adverseEvent.severity,
+            seriousness: adverseEvent.seriousness
+        });
     }
 }
 

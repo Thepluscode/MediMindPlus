@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { User } from '../models/User';
 import dotenv from 'dotenv';
+import logger from '../utils/logger';
 
 dotenv.config();
 
@@ -23,9 +24,16 @@ export const AppDataSource = new DataSource({
 export const initializeDatabase = async () => {
   try {
     await AppDataSource.initialize();
-    console.log('Database connection established');
-  } catch (error) {
-    console.error('Error connecting to the database:', error);
+    logger.info('Database connection established', {
+      service: 'database',
+      type: 'postgres',
+      database: process.env.DB_NAME || 'medimind'
+    });
+  } catch (error: any) {
+    logger.error('Error connecting to database', {
+      service: 'database',
+      error: error.message
+    });
     process.exit(1);
   }
 };
@@ -34,7 +42,9 @@ export const initializeDatabase = async () => {
 export const closeDatabaseConnection = async () => {
   if (AppDataSource.isInitialized) {
     await AppDataSource.destroy();
-    console.log('Database connection closed');
+    logger.info('Database connection closed', {
+      service: 'database'
+    });
   }
 };
 

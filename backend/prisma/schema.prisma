@@ -1,0 +1,535 @@
+// This is your Prisma schema file for MediMindPlus
+// Complete schema for all 12 revolutionary features
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// CORE USER MANAGEMENT
+// ============================================================================
+
+enum UserRole {
+  PATIENT
+  PROVIDER
+  EMPLOYER
+  ADMIN
+  RESEARCHER
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  role          UserRole @default(PATIENT)
+  firstName     String?
+  lastName      String?
+  dateOfBirth   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations to revolutionary features
+  healthTwin              VirtualHealthTwin?
+  mentalHealthAssessments MentalHealthAssessment[]
+  multiOmicsProfile       MultiOmicsProfile?
+  longevityProfile        LongevityProfile?
+  employerProfile         EmployerProfile?
+  providerProfile         ProviderProfile?
+  insuranceProfile        InsuranceProfile?
+  dataMarketplaceListings DataMarketplaceListing[]
+  courseEnrollments       CourseEnrollment[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// ============================================================================
+// FEATURE 1: VIRTUAL HEALTH TWIN
+// ============================================================================
+
+model VirtualHealthTwin {
+  id                    String   @id @default(uuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  biologicalAge         Float
+  chronologicalAge      Int
+
+  // 8 Body Systems Models (stored as JSONB for flexibility)
+  cardiovascularModel   Json     // Heart rate variability, blood pressure trends, vascular health
+  metabolicModel        Json     // Glucose regulation, insulin sensitivity, metabolic rate
+  immuneModel           Json     // Immune cell counts, antibody levels, inflammation markers
+  neurologicalModel     Json     // Cognitive function, sleep patterns, stress levels
+  musculoskeletalModel  Json     // Muscle mass, bone density, joint health
+  respiratoryModel      Json     // Lung capacity, oxygen saturation, respiratory rate
+  digestiveModel        Json     // Gut microbiome, nutrient absorption, digestive efficiency
+  endocrineModel        Json     // Hormone levels, thyroid function, adrenal health
+
+  // Health predictions
+  riskScores            Json     // Cardiovascular risk, diabetes risk, cancer risk, etc.
+
+  // Simulation results
+  simulations           Simulation[]
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Simulation {
+  id              String            @id @default(uuid())
+  healthTwinId    String
+  healthTwin      VirtualHealthTwin @relation(fields: [healthTwinId], references: [id], onDelete: Cascade)
+
+  interventionType String           // "diet", "exercise", "medication", "lifestyle"
+  interventionData Json             // Details of the intervention
+
+  results         Json              // Predicted outcomes (risk reduction, lifespan extension, etc.)
+
+  createdAt       DateTime          @default(now())
+
+  @@index([healthTwinId])
+}
+
+// ============================================================================
+// FEATURE 2: MENTAL HEALTH CRISIS PREVENTION
+// ============================================================================
+
+model MentalHealthAssessment {
+  id                  String   @id @default(uuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Crisis risk score (0-100)
+  crisisRiskScore     Int
+
+  // Risk factors
+  behavioralPatterns  Json     // Activity changes, social withdrawal, etc.
+  linguisticMarkers   Json     // Text analysis results from messages, posts
+  sleepPatterns       Json     // Sleep quality, duration, consistency
+  socialEngagement    Json     // Social interaction frequency, quality
+
+  // Early warning indicators
+  warnings            Json     // Specific warning signs detected
+
+  // Intervention recommendations
+  interventions       Json     // Suggested interventions, resources, contacts
+
+  // Safety plan
+  safetyPlan          Json?    // Personalized safety planning if applicable
+
+  assessmentDate      DateTime @default(now())
+
+  @@index([userId])
+  @@index([crisisRiskScore])
+  @@index([assessmentDate])
+}
+
+// ============================================================================
+// FEATURE 3: MULTI-OMICS INTEGRATION
+// ============================================================================
+
+model MultiOmicsProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Genomics data
+  genomicData         Json     // SNPs, genetic variants, ancestry
+  pharmacogenomics    Json     // Drug metabolism genes, sensitivities
+
+  // Microbiome data
+  microbiomeData      Json     // Gut bacteria composition, diversity scores
+  metaboliteProfile   Json     // Metabolites produced by microbiome
+
+  // Lifestyle data
+  dietaryPatterns     Json     // Food intake, macros, micros
+  physicalActivity    Json     // Exercise type, frequency, intensity
+  sleepData           Json     // Sleep stages, quality, duration
+  stressLevels        Json     // Stress biomarkers, cortisol levels
+
+  // Integrated insights
+  geneNutrientInteractions Json // How genes affect nutrient metabolism
+  personalizedNutrition    Json // Tailored nutrition recommendations
+  supplementRecommendations Json // Personalized supplement suggestions
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================================================
+// FEATURE 4: LONGEVITY OPTIMIZATION
+// ============================================================================
+
+model LongevityProfile {
+  id                      String   @id @default(uuid())
+  userId                  String   @unique
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  biologicalAge           Float
+  epigeneticAge           Float?   // From DNA methylation clocks
+
+  // Longevity scores
+  cardiovascularAge       Float
+  metabolicAge            Float
+  cognitiveAge            Float
+
+  // Biomarkers
+  biomarkers              Json     // Blood markers, inflammation, oxidative stress
+
+  // Interventions
+  interventionProtocol    Json     // Recommended interventions
+  interventionTracking    LongevityIntervention[]
+
+  // Predictions
+  predictedLifespan       Int      // Years
+  healthspan              Int      // Healthy years
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model LongevityIntervention {
+  id                String           @id @default(uuid())
+  profileId         String
+  profile           LongevityProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  interventionType  String           // "NAD_booster", "metformin", "rapamycin", "exercise_protocol"
+  startDate         DateTime
+  endDate           DateTime?
+
+  adherence         Float            // 0-100%
+  results           Json             // Biomarker changes, subjective improvements
+
+  @@index([profileId])
+}
+
+// ============================================================================
+// FEATURE 5: EMPLOYER HEALTH DASHBOARD
+// ============================================================================
+
+model EmployerProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  companyName         String
+  industry            String
+  employeeCount       Int
+
+  // Dashboard metrics
+  metrics             EmployerMetrics[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model EmployerMetrics {
+  id                        String          @id @default(uuid())
+  employerId                String
+  employer                  EmployerProfile @relation(fields: [employerId], references: [id], onDelete: Cascade)
+
+  // Aggregate health metrics
+  avgMentalHealthScore      Float
+  avgPhysicalHealthScore    Float
+  avgBiologicalAge          Float
+
+  // Risk predictions
+  burnoutRisk               Float           // 0-100
+  absenteeismPrediction     Int             // Predicted sick days
+
+  // Cost metrics
+  projectedHealthcareCosts  Float
+  costReductionOpportunities Json
+
+  // Department breakdown
+  departmentMetrics         Json
+
+  metricDate                DateTime        @default(now())
+
+  @@index([employerId])
+  @@index([metricDate])
+}
+
+// ============================================================================
+// FEATURE 6: PROVIDER PERFORMANCE ANALYTICS
+// ============================================================================
+
+model ProviderProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  licenseNumber       String
+  specialty           String
+  yearsExperience     Int
+
+  // Performance metrics
+  metrics             ProviderMetrics[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+  @@index([specialty])
+}
+
+model ProviderMetrics {
+  id                      String          @id @default(uuid())
+  providerId              String
+  provider                ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  // Performance scores
+  patientSatisfaction     Float           // 0-100
+  diagnosticAccuracy      Float           // 0-100
+  treatmentEffectiveness  Float           // 0-100
+
+  // Outcome quality
+  readmissionRate         Float
+  complicationRate        Float
+
+  // Benchmarking
+  specialtyPercentile     Int             // 0-100 (compared to peers)
+  improvementAreas        Json
+
+  // Error patterns
+  errorAnalysis           Json
+
+  metricDate              DateTime        @default(now())
+
+  @@index([providerId])
+  @@index([metricDate])
+}
+
+// ============================================================================
+// FEATURE 7: FEDERATED LEARNING (Metadata only)
+// ============================================================================
+
+model FederatedModel {
+  id                  String   @id @default(uuid())
+  modelName           String
+  modelVersion        String
+
+  // Federated learning metadata
+  participatingNodes  Int
+  totalDataPoints     BigInt
+
+  // Model performance
+  accuracy            Float
+  validationMetrics   Json
+
+  // Privacy preservation
+  differentialPrivacy Boolean
+  encryptionMethod    String
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([modelName])
+}
+
+// ============================================================================
+// FEATURE 8: PREDICTIVE INSURANCE
+// ============================================================================
+
+model InsuranceProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Risk assessment
+  healthRiskScore     Float    // 0-100
+  riskFactors         Json     // Breakdown of modifiable vs non-modifiable
+
+  // Premium calculation
+  basePremium         Float
+  adjustedPremium     Float
+  discountPercent     Float
+
+  // Savings opportunities
+  healthImprovements  Json     // Actions that could lower premium
+  potentialSavings    Float
+
+  calculatedAt        DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ============================================================================
+// FEATURE 9: DRUG DISCOVERY
+// ============================================================================
+
+model DrugCandidate {
+  id                  String   @id @default(uuid())
+
+  compoundName        String
+  targetDisease       String
+  mechanismOfAction   String
+
+  // Discovery metrics
+  efficacyScore       Float    // 0-100
+  safetyScore         Float    // 0-100
+  noveltyScore        Float    // 0-100
+
+  // Trial matching
+  eligiblePatients    Json     // Patient criteria
+  predictedEnrollment Int
+
+  // Development stage
+  stage               String   // "discovery", "preclinical", "phase1", etc.
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([targetDisease])
+  @@index([stage])
+}
+
+// ============================================================================
+// FEATURE 10: PANDEMIC EARLY WARNING
+// ============================================================================
+
+model PandemicAlert {
+  id                  String   @id @default(uuid())
+
+  alertLevel          String   // "watch", "warning", "emergency"
+  pathogen            String
+
+  // Detection signals
+  symptomClusters     Json     // Unusual symptom patterns detected
+  geographicSpread    Json     // Location data
+  transmissionRate    Float
+
+  // AI predictions
+  spreadPrediction    Json     // Predicted trajectory
+  impactAssessment    Json     // Healthcare system impact
+
+  // Recommendations
+  containmentStrategies Json
+
+  alertDate           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([alertLevel])
+  @@index([alertDate])
+}
+
+// ============================================================================
+// FEATURE 11: HEALTH EDUCATOR
+// ============================================================================
+
+model Course {
+  id                  String   @id @default(uuid())
+
+  title               String
+  description         String
+  category            String   // "nutrition", "mental_health", "chronic_disease", etc.
+
+  difficultyLevel     String   // "beginner", "intermediate", "advanced"
+  duration            Int      // Minutes
+
+  // Content
+  modules             Json     // Course modules and lessons
+
+  // Certifications
+  cmeCredits          Float?   // Continuing Medical Education credits
+  certificationType   String?
+
+  // Engagement
+  enrollments         CourseEnrollment[]
+
+  price               Float    // USD
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([category])
+  @@index([difficultyLevel])
+}
+
+model CourseEnrollment {
+  id                  String   @id @default(uuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId            String
+  course              Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  progress            Float    // 0-100%
+  completed           Boolean  @default(false)
+  certificateIssued   Boolean  @default(false)
+
+  enrolledAt          DateTime @default(now())
+  completedAt         DateTime?
+
+  @@index([userId])
+  @@index([courseId])
+  @@unique([userId, courseId])
+}
+
+// ============================================================================
+// FEATURE 12: DATA MARKETPLACE
+// ============================================================================
+
+model DataMarketplaceListing {
+  id                  String   @id @default(uuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  dataType            String   // "genomic", "microbiome", "wearable", "health_records"
+  dataDescription     String
+
+  // Privacy
+  deidentified        Boolean
+  encryptionLevel     String   // "standard", "enhanced", "military_grade"
+
+  // Consent
+  consentGiven        Boolean
+  consentScope        Json     // What data can be used for
+
+  // Monetization
+  pricePerAccess      Float
+  totalEarnings       Float    @default(0)
+
+  // Purchases
+  purchases           DataPurchase[]
+
+  listedAt            DateTime @default(now())
+  active              Boolean  @default(true)
+
+  @@index([userId])
+  @@index([dataType])
+  @@index([active])
+}
+
+model DataPurchase {
+  id                  String                  @id @default(uuid())
+  listingId           String
+  listing             DataMarketplaceListing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  buyerType           String                  // "researcher", "pharma", "academic"
+  buyerOrganization   String
+
+  purchasePrice       Float
+  platformFee         Float                   // 30% commission
+  sellerEarnings      Float
+
+  researchPurpose     String
+
+  purchasedAt         DateTime                @default(now())
+
+  @@index([listingId])
+  @@index([purchasedAt])
+}

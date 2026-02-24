@@ -8,6 +8,7 @@ const path = require('path');
 const moment = require('moment');
 const { jsPDF } = require('jspdf');
 require('jspdf-autotable');
+const logger = require('../../utils/logger').default;
 
 class ReportGenerationService {
     constructor(config) {
@@ -22,8 +23,11 @@ class ReportGenerationService {
     async initialize() {
         await this.loadReportTemplates();
         await this.setupScheduledReports();
-        
-        console.log('Report Generation Service initialized');
+
+        logger.info('Report Generation Service initialized', {
+            service: 'analytics',
+            templateCount: this.reportTemplates.size
+        });
     }
     
     async loadReportTemplates() {
@@ -188,7 +192,12 @@ class ReportGenerationService {
         } catch (error) {
             report.status = 'failed';
             report.error = error.message;
-            console.error(`Report generation failed for ${reportId}:`, error);
+            logger.error('Report generation failed', {
+                service: 'analytics',
+                reportId,
+                templateId: template.id,
+                error: error.message
+            });
             throw error;
         }
     }
@@ -913,8 +922,11 @@ class ReportGenerationService {
         setInterval(async () => {
             await this.processScheduledReports();
         }, 24 * 60 * 60 * 1000); // Check daily
-        
-        console.log('Scheduled reports setup completed');
+
+        logger.info('Scheduled reports setup completed', {
+            service: 'analytics',
+            checkInterval: '24h'
+        });
     }
     
     async processScheduledReports() {
@@ -930,12 +942,21 @@ class ReportGenerationService {
                         automated: true,
                         sendToRecipients: true
                     });
-                    
-                    console.log(`Scheduled report generated: ${report.id}`);
-                    
+
+                    logger.info('Scheduled report generated', {
+                        service: 'analytics',
+                        reportId: report.id,
+                        templateId,
+                        templateName: template.name
+                    });
+
                     await this.updateLastReportDate(templateId, today);
                 } catch (error) {
-                    console.error(`Failed to generate scheduled report ${templateId}:`, error);
+                    logger.error('Failed to generate scheduled report', {
+                        service: 'analytics',
+                        templateId,
+                        error: error.message
+                    });
                 }
             }
         }
@@ -969,7 +990,11 @@ class ReportGenerationService {
     
     async updateLastReportDate(templateId, date) {
         // This would update the database with the last report generation date
-        console.log(`Updated last report date for ${templateId}: ${date.format()}`);
+        logger.info('Updated last report date', {
+            service: 'analytics',
+            templateId,
+            date: date.format()
+        });
     }
     
     async distributeReport(report, recipients) {
@@ -977,14 +1002,24 @@ class ReportGenerationService {
             try {
                 await this.sendReportToRecipient(report, recipient);
             } catch (error) {
-                console.error(`Failed to send report to ${recipient}:`, error);
+                logger.error('Failed to send report to recipient', {
+                    service: 'analytics',
+                    reportId: report.id,
+                    recipient,
+                    error: error.message
+                });
             }
         }
     }
     
     async sendReportToRecipient(report, recipient) {
         // This would integrate with email service, secure portal, etc.
-        console.log(`Sending report ${report.id} to ${recipient}`);
+        logger.info('Sending report to recipient', {
+            service: 'analytics',
+            reportId: report.id,
+            reportName: report.name,
+            recipient
+        });
         
         // Placeholder for actual distribution logic
         const distributionMethods = {
@@ -1014,17 +1049,32 @@ class ReportGenerationService {
     
     async sendEmailReport(report, recipient) {
         // Integration with email service (SendGrid, AWS SES, etc.)
-        console.log(`Email sent: ${report.name} to ${recipient}`);
+        logger.info('Email report sent', {
+            service: 'analytics',
+            reportId: report.id,
+            reportName: report.name,
+            recipient
+        });
     }
-    
+
     async uploadToSecurePortal(report, recipient) {
         // Upload to secure portal for recipient access
-        console.log(`Report uploaded to secure portal for ${recipient}`);
+        logger.info('Report uploaded to secure portal', {
+            service: 'analytics',
+            reportId: report.id,
+            reportName: report.name,
+            recipient
+        });
     }
-    
+
     async sendEncryptedEmailReport(report, recipient) {
         // Send encrypted email with password protection
-        console.log(`Encrypted email sent: ${report.name} to ${recipient}`);
+        logger.info('Encrypted email report sent', {
+            service: 'analytics',
+            reportId: report.id,
+            reportName: report.name,
+            recipient
+        });
     }
     
     async getReportHistory(filters = {}) {
@@ -1062,7 +1112,12 @@ class ReportGenerationService {
             try {
                 await fs.unlink(report.filePath);
             } catch (error) {
-                console.warn(`Failed to delete report file: ${error.message}`);
+                logger.warn('Failed to delete report file', {
+                    service: 'analytics',
+                    reportId,
+                    filePath: report.filePath,
+                    error: error.message
+                });
             }
         }
         

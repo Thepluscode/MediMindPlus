@@ -1,6 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const logger = require('../../utils/logger').default;
 
 class ElectronicDataCapture {
     constructor(config = {}) {
@@ -14,17 +15,17 @@ class ElectronicDataCapture {
         
         // Ensure data directory exists
         fs.mkdir(this.config.dataDir, { recursive: true })
-            .catch(err => console.error('Failed to create EDC data directory:', err));
+            .catch(err => logger.error('Failed to create EDC data directory', { service: 'ElectronicDataCapture', error: err.message }));
     }
     
     async initialize() {
         try {
             await this.loadFormDefinitions();
             await this.loadQueries();
-            console.log('Electronic Data Capture system initialized');
+            logger.info('Electronic Data Capture system initialized', { service: 'ElectronicDataCapture' });
             return true;
         } catch (error) {
-            console.error('Failed to initialize EDC:', error);
+            logger.error('Failed to initialize EDC', { service: 'ElectronicDataCapture', error: error.message });
             throw error;
         }
     }

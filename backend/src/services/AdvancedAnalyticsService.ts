@@ -3,6 +3,7 @@
  * Provides time series forecasting, anomaly detection, and health insights
  */
 
+import logger from '../utils/logger';
 import {
   AnalyticsConfig,
   TimeSeriesForecast,
@@ -59,7 +60,7 @@ export class AdvancedAnalyticsService {
     try {
       this.config = config;
       this.isInitialized = true;
-      console.log('Advanced Analytics Service initialized successfully');
+      logger.info('Advanced Analytics Service initialized successfully', { service: 'AdvancedAnalyticsService' });
     } catch (error) {
       throw new AnalyticsServiceError(
         'Failed to initialize analytics service',

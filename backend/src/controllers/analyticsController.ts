@@ -4,6 +4,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+import logger from '../utils/logger';
 import {
   AnalyticsResponse,
   ForecastRequest,
@@ -380,7 +381,7 @@ export const analyticsErrorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  console.error('Analytics Error:', error);
+  logger.error('Analytics Error', { service: 'analyticsController', error: error.message });
 
   if (error instanceof AnalyticsServiceError) {
     res.status(error.statusCode).json({

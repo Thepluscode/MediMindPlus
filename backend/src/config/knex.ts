@@ -15,9 +15,6 @@ const dbConfig = {
   nodeEnv: process.env.NODE_ENV || 'development'
 };
 
-// Initialize knex instance
-let knexInstance: Knex;
-
 // Get Knex configuration based on environment
 const getKnexConfig = (): Knex.Config => ({
   client: 'pg',
@@ -43,6 +40,18 @@ const getKnexConfig = (): Knex.Config => ({
   debug: dbConfig.nodeEnv === 'development',
 });
 
+// Initialize knex instance immediately (synchronous initialization)
+let knexInstance: Knex | null = null;
+
+// Initialize immediately on module load to avoid "not initialized" errors
+try {
+  knexInstance = knex(getKnexConfig());
+  // Test connection will happen later in initializeKnex
+} catch (error) {
+  // Will be handled in initializeKnex
+  logger.error('Failed to create Knex instance', { service: 'knex-config', error: error.message });
+}
+
 /**
  * Initialize the Knex.js database connection
  */
@@ -50,7 +59,7 @@ export const initializeKnex = async (): Promise<void> => {
   try {
     if (!knexInstance) {
       knexInstance = knex(getKnexConfig());
-      
+
       // Test the connection
       await knexInstance.raw('SELECT 1');
       logger.info('Knex database connection established');
@@ -78,6 +87,7 @@ export const getKnex = (): Knex => {
 export const closeKnex = async (): Promise<void> => {
   if (knexInstance) {
     await knexInstance.destroy();
+    knexInstance = null;
     logger.info('Knex database connection closed');
   }
 };
@@ -133,11 +143,31 @@ const handleShutdown = async (): Promise<void> => {
 process.on('SIGINT', handleShutdown);
 process.on('SIGTERM', handleShutdown);
 
-export default {
-  initialize: initializeKnex,
-  getKnex,
-  close: closeKnex,
-  migrate: runMigrations,
-  seed: runSeeds,
-  rollback: rollbackMigration,
-};
+// Create a proxy that allows using the default export as both an object and a function
+const knexProxy = new Proxy(
+  {
+    initialize: initializeKnex,
+    instance: getKnex,
+    getKnex,
+    close: closeKnex,
+    migrate: runMigrations,
+    seed: runSeeds,
+    rollback: rollbackMigration,
+  },
+  {
+    // This allows knex('table_name') to work by proxying function calls to getKnex()
+    apply(_target, _thisArg, argArray) {
+      return getKnex()(...argArray);
+    },
+    // This allows knex.method() to work
+    get(target: any, prop) {
+      if (prop in target) {
+        return target[prop];
+      }
+      // Proxy to the actual knex instance for other properties/methods
+      return getKnex()[prop as keyof Knex];
+    }
+  }
+) as any;
+
+export default knexProxy;

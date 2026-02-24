@@ -3,6 +3,7 @@
 
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import logger from '../utils/logger';
 
 // Load environment variables
 dotenv.config();
@@ -99,8 +100,10 @@ const envSchema = z.object({
 const parseResult = envSchema.safeParse(process.env);
 
 if (!parseResult.success) {
-  console.error('❌ Invalid environment configuration:');
-  console.error(parseResult.error.format());
+  logger.error('Invalid environment configuration', {
+    service: 'config',
+    errors: parseResult.error.format()
+  });
   process.exit(1);
 }
 
@@ -258,8 +261,10 @@ if (config.isProduction) {
   const missingVars = requiredProductionVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
-    console.error('❌ Missing required production environment variables:');
-    missingVars.forEach(varName => console.error(`  - ${varName}`));
+    logger.error('Missing required production environment variables', {
+      service: 'config',
+      missingVars
+    });
     process.exit(1);
   }
 }

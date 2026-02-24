@@ -16,20 +16,37 @@ export class AuthService {
     this.refreshSecret = process.env.JWT_REFRESH_SECRET || 'your_refresh_secret';
   }
 
-  async register(userData: Partial<User>): Promise<{ user: User; tokens: { accessToken: string; refreshToken: string } }> {
+  async register(userData: Partial<User> & { name?: string }): Promise<{ user: User; tokens: { accessToken: string; refreshToken: string } }> {
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({ where: { email: userData.email } });
     if (existingUser) {
       throw new Error('Email already in use');
     }
 
+    // Validate required fields
+    if (!userData.password) {
+      throw new Error('Password is required');
+    }
+
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(userData.password, salt);
 
+    // Handle 'name' field - split into firstName and lastName
+    let firstName = userData.firstName;
+    let lastName = userData.lastName;
+
+    if (userData.name && !firstName && !lastName) {
+      const nameParts = userData.name.trim().split(/\s+/);
+      firstName = nameParts[0];
+      lastName = nameParts.slice(1).join(' ') || '';
+    }
+
     // Create new user
     const user = this.userRepository.create({
       ...userData,
+      firstName,
+      lastName,
       password: hashedPassword,
     });
 

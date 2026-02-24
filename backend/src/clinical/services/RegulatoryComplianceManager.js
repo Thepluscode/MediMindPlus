@@ -2,6 +2,7 @@ const { EventEmitter } = require('events');
 const path = require('path');
 const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
+const logger = require('../../utils/logger').default;
 const { ElectronicDataCapture } = require('./ElectronicDataCapture');
 
 class RegulatoryComplianceManager extends EventEmitter {
@@ -20,7 +21,11 @@ class RegulatoryComplianceManager extends EventEmitter {
         
         // Ensure data directory exists
         fs.mkdir(this.config.dataDir, { recursive: true })
-            .catch(err => console.error('Failed to create regulatory data directory:', err));
+            .catch(err => logger.error('Failed to create regulatory data directory', {
+                service: 'regulatory-compliance',
+                dataDir: this.config.dataDir,
+                error: err.message
+            }));
     }
     
     async initialize() {
@@ -28,10 +33,17 @@ class RegulatoryComplianceManager extends EventEmitter {
             await this.loadRegulations();
             await this.loadComplianceChecks();
             await this.loadDocuments();
-            console.log('Regulatory Compliance Manager initialized');
+            logger.info('Regulatory Compliance Manager initialized', {
+                service: 'regulatory-compliance',
+                regulationsCount: this.regulations.size,
+                complianceChecksCount: this.complianceChecks.size
+            });
             return true;
         } catch (error) {
-            console.error('Failed to initialize Regulatory Compliance Manager:', error);
+            logger.error('Failed to initialize Regulatory Compliance Manager', {
+                service: 'regulatory-compliance',
+                error: error.message
+            });
             throw error;
         }
     }
@@ -503,8 +515,14 @@ class RegulatoryComplianceManager extends EventEmitter {
             
             return complianceRecord;
         } catch (error) {
-            console.error(`Error running compliance check ${checkId}:`, error);
-            
+            logger.error('Error running compliance check', {
+                service: 'regulatory-compliance',
+                checkId,
+                studyId: study?.id,
+                participantId: participant?.id,
+                error: error.message
+            });
+
             const errorRecord = {
                 id: uuidv4(),
                 checkId,
@@ -531,7 +549,13 @@ class RegulatoryComplianceManager extends EventEmitter {
                 const result = await this.runComplianceCheck(checkId, study, participant);
                 results.push(result);
             } catch (error) {
-                console.error(`Skipping check ${checkId} due to error:`, error);
+                logger.error('Skipping compliance check due to error', {
+                    service: 'regulatory-compliance',
+                    checkId,
+                    studyId: study?.id,
+                    participantId: participant?.id,
+                    error: error.message
+                });
                 results.push({
                     checkId,
                     status: 'error',

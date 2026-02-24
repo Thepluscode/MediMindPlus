@@ -1,4 +1,6 @@
 // backend/ai/FeatureEngineeringService.js
+const logger = require('../utils/logger').default;
+
 class FeatureEngineeringService {
     constructor() {
         this.featureExtractors = new Map();
@@ -36,7 +38,11 @@ class FeatureEngineeringService {
                 try {
                     features[dataType] = await extractor.extract(patientData[dataType]);
                 } catch (error) {
-                    console.error(`Error extracting ${dataType} features:`, error);
+                    logger.error('Error extracting features', {
+                        service: 'feature-engineering',
+                        dataType,
+                        error: error.message
+                    });
                     features[dataType] = {};
                 }
             }
@@ -332,24 +338,37 @@ class ModelTrainingService {
             job.status = 'running';
             job.startTime = new Date();
             this.activeTraining.set(job.id, job);
-            
-            console.log(`Starting training job: ${job.id}`);
-            
+
+            logger.info('Starting ML model training job', {
+                service: 'model-training',
+                trainingId: job.id,
+                config: job.config
+            });
+
             // Execute Python training script
             const results = await this.runPythonTraining(job);
             
             job.status = 'completed';
             job.endTime = new Date();
             job.metrics = results.metrics;
-            
-            console.log(`Training completed: ${job.id}`);
+
+            logger.info('ML model training completed', {
+                service: 'model-training',
+                trainingId: job.id,
+                metrics: results.metrics,
+                duration: job.endTime - job.startTime
+            });
             
         } catch (error) {
             job.status = 'failed';
             job.endTime = new Date();
             job.error = error.message;
-            
-            console.error(`Training failed: ${job.id}`, error);
+
+            logger.error('ML model training failed', {
+                service: 'model-training',
+                trainingId: job.id,
+                error: error.message
+            });
         } finally {
             this.activeTraining.delete(job.id);
         }
@@ -407,8 +426,12 @@ class ModelValidationService {
     }
     
     async validateModel(modelId, validationData) {
-        console.log(`Starting validation for model: ${modelId}`);
-        
+        logger.info('Starting ML model validation', {
+            service: 'model-validation',
+            modelId,
+            validationDataSize: validationData?.length || 0
+        });
+
         try {
             const metrics = await this.calculateValidationMetrics(modelId, validationData);
             const passed = this.checkValidationThresholds(metrics);
@@ -425,7 +448,11 @@ class ModelValidationService {
             
             return validationResult;
         } catch (error) {
-            console.error(`Validation failed for model ${modelId}:`, error);
+            logger.error('ML model validation failed', {
+                service: 'model-validation',
+                modelId,
+                error: error.message
+            });
             throw error;
         }
     }

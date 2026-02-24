@@ -7,6 +7,7 @@ const sharp = require('sharp');
 const PDFDocument = require('pdfkit');
 const Chart = require('chart.js/auto');
 const { createCanvas } = require('canvas');
+const logger = require('../../utils/logger').default;
 
 class HealthDashboardService extends EventEmitter {
     constructor(config) {
@@ -25,8 +26,8 @@ class HealthDashboardService extends EventEmitter {
         await this.redisClient.connect();
         await this.loadDashboardTemplates();
         await this.setupRealTimeUpdates();
-        
-        console.log('Health Dashboard Service initialized');
+
+        logger.info('Health Dashboard Service initialized', { service: 'HealthDashboardService' });
     }
     
     async loadDashboardTemplates() {
@@ -589,7 +590,7 @@ class HealthDashboardService extends EventEmitter {
                     this.emit('widgetUpdated', { widgetId, data: newData });
                 } catch (error) {
                     widget.error = error.message;
-                    console.error(`Error updating widget ${widgetId}:`, error);
+                    logger.error('Error updating widget', { service: 'HealthDashboardService', widgetId, error: error.message });
                 }
             }
         }

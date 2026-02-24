@@ -3,6 +3,7 @@ const { EventEmitter } = require('events');
 const { InfluxDB, Point } = require('@influxdata/influxdb-client');
 const redis = require('redis');
 const moment = require('moment');
+const logger = require('../../utils/logger').default;
 
 class KPITrackingService extends EventEmitter {
     constructor(config) {
@@ -25,8 +26,11 @@ class KPITrackingService extends EventEmitter {
         await this.defineKPIs();
         await this.setupMetricCollectors();
         await this.startPeriodicCalculations();
-        
-        console.log('KPI Tracking Service initialized');
+
+        logger.info('KPI Tracking Service initialized', {
+            service: 'analytics',
+            kpiCount: this.kpiDefinitions.size
+        });
     }
     
     async defineKPIs() {
@@ -336,8 +340,11 @@ class KPITrackingService extends EventEmitter {
         this.metricCollectors.set('weekly', setInterval(async () => {
             await this.collectWeeklyMetrics();
         }, 7 * 24 * 3600000));
-        
-        console.log('Metric collectors started');
+
+        logger.info('Metric collectors started', {
+            service: 'analytics',
+            collectors: ['real_time', 'hourly', 'daily', 'weekly']
+        });
     }
     
     async collectRealTimeMetrics() {
@@ -431,7 +438,10 @@ class KPITrackingService extends EventEmitter {
     async recordMetric(kpiId, value, timestamp = new Date()) {
         const kpi = this.kpiDefinitions.get(kpiId);
         if (!kpi) {
-            console.warn(`Unknown KPI: ${kpiId}`);
+            logger.warn('Unknown KPI attempted to be recorded', {
+                service: 'analytics',
+                kpiId
+            });
             return;
         }
         
@@ -497,8 +507,15 @@ class KPITrackingService extends EventEmitter {
                     JSON.stringify(alert)
                 );
                 await this.redisClient.ltrim(`alerts:kpi:${severity}`, 0, 99); // Keep last 100
-                
-                console.warn(`KPI Alert [${severity.toUpperCase()}]: ${alert.message}`);
+
+                logger.warn('KPI alert triggered', {
+                    service: 'analytics',
+                    kpiId: alert.kpiId,
+                    kpiName: alert.kpiName,
+                    severity: severity.toUpperCase(),
+                    value: alert.value,
+                    message: alert.message
+                });
             }
         }
     }
@@ -548,7 +565,11 @@ class KPITrackingService extends EventEmitter {
             
             return previous ? (latest - previous) / previous : 0;
         } catch (error) {
-            console.error(`Error calculating growth rate for ${kpiId}:`, error);
+            logger.error('Error calculating growth rate', {
+                service: 'analytics',
+                kpiId,
+                error: error.message
+            });
             return 0;
         }
     }
@@ -595,10 +616,13 @@ class KPITrackingService extends EventEmitter {
             const healthChecks = await this.performHealthChecks();
             const totalChecks = healthChecks.length;
             const successfulChecks = healthChecks.filter(check => check.status === 'healthy').length;
-            
+
             return totalChecks > 0 ? successfulChecks / totalChecks : 1.0;
         } catch (error) {
-            console.error('Error calculating system uptime:', error);
+            logger.error('Error calculating system uptime', {
+                service: 'analytics',
+                error: error.message
+            });
             return 0.99; // Default fallback
         }
     }
@@ -634,10 +658,13 @@ class KPITrackingService extends EventEmitter {
         try {
             const queryApi = this.influxDB.getQueryApi(this.config.influxdb.org);
             const data = await queryApi.collectRows(query);
-            
+
             return data.length > 0 ? data[0]._value : 200; // Default 200ms
         } catch (error) {
-            console.error('Error calculating API response time:', error);
+            logger.error('Error calculating API response time', {
+                service: 'analytics',
+                error: error.message
+            });
             return 200;
         }
     }
@@ -655,10 +682,13 @@ class KPITrackingService extends EventEmitter {
         try {
             const queryApi = this.influxDB.getQueryApi(this.config.influxdb.org);
             const data = await queryApi.collectRows(query);
-            
+
             return data.length > 0 ? data[0]._value : 0;
         } catch (error) {
-            console.error('Error counting security incidents:', error);
+            logger.error('Error counting security incidents', {
+                service: 'analytics',
+                error: error.message
+            });
             return 0;
         }
     }
@@ -688,10 +718,13 @@ class KPITrackingService extends EventEmitter {
             const baseUsers = 800000;
             const dailyGrowth = 1000;
             const daysSinceBase = Math.floor((Date.now() - new Date('2024-01-01').getTime()) / (1000 * 60 * 60 * 24));
-            
+
             return baseUsers + (dailyGrowth * daysSinceBase);
         } catch (error) {
-            console.error('Error calculating total users:', error);
+            logger.error('Error calculating total users', {
+                service: 'analytics',
+                error: error.message
+            });
             return 850000;
         }
     }
@@ -701,10 +734,13 @@ class KPITrackingService extends EventEmitter {
         try {
             const subscriptionRevenue = await this.getSubscriptionRevenue();
             const enterpriseRevenue = await this.getEnterpriseRevenue();
-            
+
             return subscriptionRevenue + enterpriseRevenue;
         } catch (error) {
-            console.error('Error calculating MRR:', error);
+            logger.error('Error calculating MRR', {
+                service: 'analytics',
+                error: error.message
+            });
             return 987000; // Default fallback
         }
     }
@@ -762,10 +798,13 @@ class KPITrackingService extends EventEmitter {
         try {
             const queryApi = this.influxDB.getQueryApi(this.config.influxdb.org);
             const data = await queryApi.collectRows(query);
-            
+
             return data.length > 0 ? data[0]._value : 0.92; // Default 92%
         } catch (error) {
-            console.error('Error calculating prediction accuracy:', error);
+            logger.error('Error calculating prediction accuracy', {
+                service: 'analytics',
+                error: error.message
+            });
             return 0.92;
         }
     }
@@ -783,10 +822,13 @@ class KPITrackingService extends EventEmitter {
         try {
             const queryApi = this.influxDB.getQueryApi(this.config.influxdb.org);
             const data = await queryApi.collectRows(query);
-            
+
             return data.length > 0 ? data[0]._value : 1247; // Default value
         } catch (error) {
-            console.error('Error calculating diseases prevented:', error);
+            logger.error('Error calculating diseases prevented', {
+                service: 'analytics',
+                error: error.message
+            });
             return 1247;
         }
     }
@@ -829,10 +871,13 @@ class KPITrackingService extends EventEmitter {
         try {
             const queryApi = this.influxDB.getQueryApi(this.config.influxdb.org);
             const data = await queryApi.collectRows(query);
-            
+
             return data.length > 0 ? data[0]._value : 18.5; // Default 18.5 hours
         } catch (error) {
-            console.error('Error calculating support resolution time:', error);
+            logger.error('Error calculating support resolution time', {
+                service: 'analytics',
+                error: error.message
+            });
             return 18.5;
         }
     }
@@ -978,7 +1023,12 @@ class KPITrackingService extends EventEmitter {
                 period: period
             };
         } catch (error) {
-            console.error(`Error analyzing trend for ${kpiId}:`, error);
+            logger.error('Error analyzing trend', {
+                service: 'analytics',
+                kpiId,
+                period,
+                error: error.message
+            });
             return { trend: 'error', confidence: 0 };
         }
     }

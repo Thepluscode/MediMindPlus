@@ -2,13 +2,14 @@ const express = require('express');
 const { body, param, query } = require('express-validator');
 const DashboardController = require('../controllers/DashboardController');
 const { authenticateToken } = require('../middleware/auth');
+const logger = require('../utils/logger').default;
 
 const router = express.Router();
 const dashboardController = new DashboardController();
 
 // Initialize the dashboard controller
 dashboardController.initialize().catch(err => {
-    console.error('Failed to initialize DashboardController:', err);
+    logger.error('Failed to initialize DashboardController', { service: 'dashboard-routes', error: err.message });
     process.exit(1);
 });
 
@@ -110,7 +111,7 @@ router.get(
 
 // Error handling middleware for dashboard routes
 router.use((err, req, res, next) => {
-    console.error('Dashboard error:', err);
+    logger.error('Dashboard error', { service: 'dashboard-routes', error: err.message });
     
     if (err.name === 'ValidationError') {
         return res.status(400).json({

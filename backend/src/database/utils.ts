@@ -1,5 +1,6 @@
 import { Knex } from 'knex';
 import { getKnex } from './database';
+import logger from '../utils/logger';
 
 type QueryBuilder = Knex.QueryBuilder<any, any>;
 
@@ -115,7 +116,7 @@ const parseJsonField = (data: any, fields: string[]): any => {
         result[field] = JSON.parse(result[field]);
       } catch (e) {
         // If parsing fails, keep the original value
-        console.warn(`Failed to parse JSON field ${field}:`, e);
+        logger.warn('Failed to parse JSON field', { service: 'database-utils', field, error: e.message });
       }
     }
   });

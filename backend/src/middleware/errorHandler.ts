@@ -1,89 +1,157 @@
 // Production-Ready Error Handler with HIPAA Compliance
 import { Request, Response, NextFunction } from 'express';
-import { enhancedLogger } from '../utils/logger';
-import { config } from '../config/environment';
+import { logger } from '../utils/logger';
 
 // Custom error types
 export class AppError extends Error {
   public statusCode: number;
   public isOperational: boolean;
   public code?: string;
+  public details?: any;
 
-  constructor(message: string, statusCode: number, isOperational = true, code?: string) {
+  constructor(message: string, statusCode: number, isOperational = true, code?: string, details?: any) {
     super(message);
     this.statusCode = statusCode;
     this.isOperational = isOperational;
     this.code = code;
+    this.details = details;
 
     Error.captureStackTrace(this, this.constructor);
   }
 }
 
+export class BadRequestError extends AppError {
+  constructor(message: string = 'Bad request', details?: any) {
+    super(message, 400, true, 'BAD_REQUEST', details);
+    this.name = 'BadRequestError';
+  }
+}
+
 export class ValidationError extends AppError {
-  constructor(message: string, field?: string) {
-    super(message, 400, true, 'VALIDATION_ERROR');
+  constructor(message: string = 'Validation failed', details?: any) {
+    super(message, 422, true, 'VALIDATION_ERROR', details);
     this.name = 'ValidationError';
   }
 }
 
+export class UnauthorizedError extends AppError {
+  constructor(message: string = 'Authentication required', details?: any) {
+    super(message, 401, true, 'UNAUTHORIZED', details);
+    this.name = 'UnauthorizedError';
+  }
+}
+
 export class AuthenticationError extends AppError {
-  constructor(message: string = 'Authentication required') {
-    super(message, 401, true, 'AUTHENTICATION_ERROR');
+  constructor(message: string = 'Authentication failed', details?: any) {
+    super(message, 401, true, 'AUTHENTICATION_ERROR', details);
     this.name = 'AuthenticationError';
   }
 }
 
+export class ForbiddenError extends AppError {
+  constructor(message: string = 'Access forbidden', details?: any) {
+    super(message, 403, true, 'FORBIDDEN', details);
+    this.name = 'ForbiddenError';
+  }
+}
+
 export class AuthorizationError extends AppError {
-  constructor(message: string = 'Insufficient permissions') {
-    super(message, 403, true, 'AUTHORIZATION_ERROR');
+  constructor(message: string = 'Insufficient permissions', details?: any) {
+    super(message, 403, true, 'AUTHORIZATION_ERROR', details);
     this.name = 'AuthorizationError';
   }
 }
 
 export class NotFoundError extends AppError {
-  constructor(message: string = 'Resource not found') {
-    super(message, 404, true, 'NOT_FOUND_ERROR');
+  constructor(message: string = 'Resource not found', details?: any) {
+    super(message, 404, true, 'NOT_FOUND', details);
     this.name = 'NotFoundError';
   }
 }
 
 export class ConflictError extends AppError {
-  constructor(message: string = 'Resource conflict') {
-    super(message, 409, true, 'CONFLICT_ERROR');
+  constructor(message: string = 'Resource conflict', details?: any) {
+    super(message, 409, true, 'CONFLICT', details);
     this.name = 'ConflictError';
   }
 }
 
+export class TooManyRequestsError extends AppError {
+  constructor(message: string = 'Too many requests', details?: any) {
+    super(message, 429, true, 'TOO_MANY_REQUESTS', details);
+    this.name = 'TooManyRequestsError';
+  }
+}
+
 export class RateLimitError extends AppError {
-  constructor(message: string = 'Rate limit exceeded') {
-    super(message, 429, true, 'RATE_LIMIT_ERROR');
+  constructor(message: string = 'Rate limit exceeded', details?: any) {
+    super(message, 429, true, 'RATE_LIMIT_ERROR', details);
     this.name = 'RateLimitError';
   }
 }
 
+export class InternalServerError extends AppError {
+  constructor(message: string = 'Internal server error', details?: any) {
+    super(message, 500, true, 'INTERNAL_SERVER_ERROR', details);
+    this.name = 'InternalServerError';
+  }
+}
+
 export class DatabaseError extends AppError {
-  constructor(message: string = 'Database operation failed') {
-    super(message, 500, true, 'DATABASE_ERROR');
+  constructor(message: string = 'Database operation failed', details?: any) {
+    super(message, 500, true, 'DATABASE_ERROR', details);
     this.name = 'DatabaseError';
   }
 }
 
+export class BadGatewayError extends AppError {
+  constructor(message: string = 'Bad gateway', details?: any) {
+    super(message, 502, true, 'BAD_GATEWAY', details);
+    this.name = 'BadGatewayError';
+  }
+}
+
+export class ServiceUnavailableError extends AppError {
+  constructor(message: string = 'Service unavailable', details?: any) {
+    super(message, 503, true, 'SERVICE_UNAVAILABLE', details);
+    this.name = 'ServiceUnavailableError';
+  }
+}
+
 export class ExternalServiceError extends AppError {
-  constructor(message: string = 'External service unavailable') {
-    super(message, 503, true, 'EXTERNAL_SERVICE_ERROR');
+  constructor(serviceName: string, message: string = 'External service error', details?: any) {
+    super(`${serviceName}: ${message}`, 502, true, 'EXTERNAL_SERVICE_ERROR', { serviceName, ...details });
     this.name = 'ExternalServiceError';
+  }
+}
+
+export class GatewayTimeoutError extends AppError {
+  constructor(message: string = 'Gateway timeout', details?: any) {
+    super(message, 504, true, 'GATEWAY_TIMEOUT', details);
+    this.name = 'GatewayTimeoutError';
+  }
+}
+
+export class HIPAAComplianceError extends AppError {
+  constructor(message: string = 'HIPAA compliance violation', details?: any) {
+    super(message, 403, true, 'HIPAA_COMPLIANCE_ERROR', details);
+    this.name = 'HIPAAComplianceError';
   }
 }
 
 // Error response interface
 interface ErrorResponse {
+  success: false;
   error: {
     message: string;
     code?: string;
     statusCode: number;
     timestamp: string;
     requestId?: string;
+    path?: string;
+    method?: string;
     details?: any;
+    stack?: string;
   };
 }
 
@@ -112,7 +180,7 @@ function sanitizeError(error: any): any {
   return {
     ...error,
     message: sanitizedMessage,
-    stack: config.isDevelopment ? error.stack : undefined
+    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
   };
 }
 
@@ -175,63 +243,63 @@ export const errorHandler = (
 
   // Log error with appropriate level
   if (statusCode >= 500) {
-    enhancedLogger.error('Server Error', {
+    logger.error('Server Error', {
       error: sanitizedError,
       requestId,
       userId,
       method: req.method,
       path: req.path,
       ip: req.ip,
-      userAgent: req.get('User-Agent')
+      userAgent: req.get('User-Agent'),
+      service: 'error-handler'
     });
-
-    // Log security events for authentication/authorization errors
-    if (statusCode === 401 || statusCode === 403) {
-      enhancedLogger.security('Authentication/Authorization Failure', 'medium', {
-        statusCode,
-        path: req.path,
-        ip: req.ip,
-        userAgent: req.get('User-Agent')
-      });
-    }
   } else if (statusCode >= 400) {
-    enhancedLogger.warn('Client Error', {
+    logger.warn('Client Error', {
       error: sanitizedError,
       requestId,
       userId,
       method: req.method,
       path: req.path,
-      ip: req.ip
+      ip: req.ip,
+      service: 'error-handler'
     });
   }
 
-  // Audit log for security-related errors
+  // Log security-related errors
   if ([401, 403, 429].includes(statusCode)) {
-    enhancedLogger.audit('ERROR_RESPONSE', userId, undefined, {
+    logger.warn('Security Error', {
       statusCode,
       code,
       path: req.path,
-      ip: req.ip
+      ip: req.ip,
+      userId,
+      service: 'error-handler',
+      type: 'security'
     });
   }
 
   // Prepare error response
   const errorResponse: ErrorResponse = {
+    success: false,
     error: {
       message: sanitizedError.message,
       code,
       statusCode,
       timestamp: new Date().toISOString(),
-      requestId
+      requestId,
+      path: req.path,
+      method: req.method
     }
   };
 
   // Add details in development mode
-  if (config.isDevelopment && error.stack) {
-    errorResponse.error.details = {
-      stack: error.stack,
-      originalMessage: error.message
-    };
+  if (process.env.NODE_ENV === 'development') {
+    if (error.stack) {
+      errorResponse.error.stack = error.stack;
+    }
+    if ((error as AppError).details) {
+      errorResponse.error.details = (error as AppError).details;
+    }
   }
 
   // Send error response
@@ -277,19 +345,24 @@ export const handleDatabaseError = (error: any): AppError => {
 // Rate limit error handler
 export const handleRateLimitError = (req: Request, res: Response) => {
   const error = new RateLimitError('Too many requests, please try again later');
-  
-  enhancedLogger.security('Rate Limit Exceeded', 'medium', {
+
+  logger.warn('Rate Limit Exceeded', {
     ip: req.ip,
     path: req.path,
-    userAgent: req.get('User-Agent')
+    userAgent: req.get('User-Agent'),
+    service: 'rate-limiter',
+    type: 'security'
   });
-  
+
   res.status(429).json({
+    success: false,
     error: {
       message: error.message,
       code: error.code,
       statusCode: 429,
       timestamp: new Date().toISOString(),
+      path: req.path,
+      method: req.method,
       retryAfter: '15 minutes'
     }
   });

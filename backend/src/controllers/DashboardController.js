@@ -1,6 +1,7 @@
 const HealthDashboardService = require('../analytics/dashboards/HealthDashboardService');
 const dashboardConfig = require('../config/dashboard.config');
 const { validationResult } = require('express-validator');
+const logger = require('../utils/logger').default;
 
 class DashboardController {
     constructor() {
@@ -10,9 +11,9 @@ class DashboardController {
     async initialize() {
         try {
             await this.dashboardService.initialize();
-            console.log('DashboardController initialized');
+            logger.info('DashboardController initialized', { service: 'DashboardController' });
         } catch (error) {
-            console.error('Failed to initialize DashboardController:', error);
+            logger.error('Failed to initialize DashboardController', { service: 'DashboardController', error: error.message });
             throw error;
         }
     }

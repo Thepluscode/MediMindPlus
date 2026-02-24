@@ -7,6 +7,7 @@ import config from '../config/config';
 import AdvancedAnalyticsService from './AdvancedAnalyticsService';
 import { FeatureEngineeringService } from './FeatureEngineeringService';
 import { AnalyticsConfig, AnalyticsServiceError } from '../types/analytics';
+import logger from '../utils/logger';
 
 // Global analytics service instances
 let analyticsService: AdvancedAnalyticsService | null = null;
@@ -18,7 +19,9 @@ let isInitialized = false;
  */
 export async function initializeAnalyticsServices(): Promise<void> {
   try {
-    console.log('🔧 Initializing Analytics Services...');
+    logger.info('Initializing Analytics Services', {
+      service: 'analytics'
+    });
 
     // Create analytics configuration from app config
     const analyticsConfig: AnalyticsConfig = {
@@ -37,22 +40,39 @@ export async function initializeAnalyticsServices(): Promise<void> {
     // Initialize Advanced Analytics Service
     analyticsService = new AdvancedAnalyticsService();
     await analyticsService.initialize(analyticsConfig);
-    console.log('✅ Advanced Analytics Service initialized');
+    logger.info('Advanced Analytics Service initialized', {
+      service: 'analytics'
+    });
 
     // Initialize Feature Engineering Service
     featureService = new FeatureEngineeringService();
-    console.log('✅ Feature Engineering Service initialized');
+    logger.info('Feature Engineering Service initialized', {
+      service: 'analytics'
+    });
 
     // Set initialization flag
     isInitialized = true;
 
-    console.log('🎉 All Analytics Services initialized successfully');
-    
+    logger.info('All Analytics Services initialized successfully', {
+      service: 'analytics',
+      config: {
+        timeSeriesForecasting: analyticsConfig.enableTimeSeriesForecasting,
+        anomalyDetection: analyticsConfig.enableAnomalyDetection,
+        circadianAnalysis: analyticsConfig.enableCircadianAnalysis,
+        personalizedBaselines: analyticsConfig.enablePersonalizedBaselines,
+        populationHealth: analyticsConfig.enablePopulationHealth,
+        clinicalDecisionSupport: analyticsConfig.enableClinicalDecisionSupport
+      }
+    });
+
     // Log configuration summary
     logConfigurationSummary(analyticsConfig);
 
   } catch (error) {
-    console.error('❌ Failed to initialize Analytics Services:', error);
+    logger.error('Failed to initialize Analytics Services', {
+      service: 'analytics',
+      error: error.message
+    });
     throw new AnalyticsServiceError(
       'Analytics services initialization failed',
       'INITIALIZATION_FAILED',
@@ -139,16 +159,23 @@ export function getAnalyticsServiceStatus(): {
  */
 export async function shutdownAnalyticsServices(): Promise<void> {
   try {
-    console.log('🔄 Shutting down Analytics Services...');
+    logger.info('Shutting down Analytics Services', {
+      service: 'analytics'
+    });
 
     // Reset service instances
     analyticsService = null;
     featureService = null;
     isInitialized = false;
 
-    console.log('✅ Analytics Services shut down successfully');
+    logger.info('Analytics Services shut down successfully', {
+      service: 'analytics'
+    });
   } catch (error) {
-    console.error('❌ Error during Analytics Services shutdown:', error);
+    logger.error('Error during Analytics Services shutdown', {
+      service: 'analytics',
+      error: error.message
+    });
     throw error;
   }
 }
@@ -157,12 +184,16 @@ export async function shutdownAnalyticsServices(): Promise<void> {
  * Restart analytics services
  */
 export async function restartAnalyticsServices(): Promise<void> {
-  console.log('🔄 Restarting Analytics Services...');
-  
+  logger.info('Restarting Analytics Services', {
+    service: 'analytics'
+  });
+
   await shutdownAnalyticsServices();
   await initializeAnalyticsServices();
-  
-  console.log('✅ Analytics Services restarted successfully');
+
+  logger.info('Analytics Services restarted successfully', {
+    service: 'analytics'
+  });
 }
 
 /**
@@ -235,22 +266,25 @@ export function validateAnalyticsConfiguration(): { isValid: boolean; errors: st
  * Log configuration summary
  */
 function logConfigurationSummary(config: AnalyticsConfig): void {
-  console.log('\n📊 Analytics Configuration Summary:');
-  console.log(`├── Time Series Forecasting: ${config.enableTimeSeriesForecasting ? '✅' : '❌'}`);
-  if (config.enableTimeSeriesForecasting) {
-    console.log(`│   └── Models: ${config.forecastingModels.join(', ')}`);
-  }
-  console.log(`├── Anomaly Detection: ${config.enableAnomalyDetection ? '✅' : '❌'}`);
-  if (config.enableAnomalyDetection) {
-    console.log(`│   └── Algorithms: ${config.anomalyDetectionAlgorithms.join(', ')}`);
-  }
-  console.log(`├── Circadian Analysis: ${config.enableCircadianAnalysis ? '✅' : '❌'}`);
-  console.log(`├── Personalized Baselines: ${config.enablePersonalizedBaselines ? '✅' : '❌'}`);
-  console.log(`├── Population Health: ${config.enablePopulationHealth ? '✅' : '❌'}`);
-  console.log(`├── Clinical Decision Support: ${config.enableClinicalDecisionSupport ? '✅' : '❌'}`);
-  console.log(`├── Drug Interaction Checking: ${config.enableDrugInteractionChecking ? '✅' : '❌'}`);
-  console.log(`└── Evidence-Based Recommendations: ${config.enableEvidenceBasedRecommendations ? '✅' : '❌'}`);
-  console.log('');
+  logger.info('Analytics Configuration Summary', {
+    service: 'analytics',
+    configuration: {
+      timeSeriesForecasting: {
+        enabled: config.enableTimeSeriesForecasting,
+        models: config.forecastingModels
+      },
+      anomalyDetection: {
+        enabled: config.enableAnomalyDetection,
+        algorithms: config.anomalyDetectionAlgorithms
+      },
+      circadianAnalysis: config.enableCircadianAnalysis,
+      personalizedBaselines: config.enablePersonalizedBaselines,
+      populationHealth: config.enablePopulationHealth,
+      clinicalDecisionSupport: config.enableClinicalDecisionSupport,
+      drugInteractionChecking: config.enableDrugInteractionChecking,
+      evidenceBasedRecommendations: config.enableEvidenceBasedRecommendations
+    }
+  });
 }
 
 /**

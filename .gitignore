@@ -10,3 +10,14 @@ ml-pipeline/
 frontend/node_modules/
 backend/node_modules/
 services/*/node_modules/
+
+# Expo cache
+frontend/.expo/
+frontend/.expo-shared/
+
+# Build artifacts
+dist/
+build/
+
+# Railway
+.railway/

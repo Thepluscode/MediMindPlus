@@ -3,6 +3,8 @@
  * Central export point for all analytics-related functionality
  */
 
+import logger from '../utils/logger';
+
 // Core Services
 export { default as AdvancedAnalyticsService } from '../services/AdvancedAnalyticsService';
 export { 
@@ -104,8 +106,12 @@ export const ANALYTICS_MODULE_INFO = {
  * Quick start function for analytics module
  */
 export async function quickStartAnalytics(): Promise<void> {
-  console.log(`🚀 Starting ${ANALYTICS_MODULE_INFO.name} v${ANALYTICS_MODULE_INFO.version}`);
-  
+  logger.info('Starting Analytics Module', {
+    service: 'analytics',
+    moduleName: ANALYTICS_MODULE_INFO.name,
+    version: ANALYTICS_MODULE_INFO.version
+  });
+
   try {
     // Validate configuration
     const validation = validateAnalyticsConfiguration();
@@ -118,16 +124,27 @@ export async function quickStartAnalytics(): Promise<void> {
     
     // Perform health check
     const healthCheck = await performAnalyticsHealthCheck();
-    console.log(`📊 Analytics Module Status: ${healthCheck.status.toUpperCase()}`);
-    
+    logger.info('Analytics Module health check complete', {
+      service: 'analytics',
+      status: healthCheck.status.toUpperCase()
+    });
+
     if (healthCheck.status === 'healthy') {
-      console.log('✅ Analytics module is ready for use!');
+      logger.info('Analytics module is ready for use', {
+        service: 'analytics'
+      });
     } else {
-      console.warn('⚠️ Analytics module started with issues:', healthCheck.details);
+      logger.warn('Analytics module started with issues', {
+        service: 'analytics',
+        details: healthCheck.details
+      });
     }
     
-  } catch (error) {
-    console.error('❌ Failed to start analytics module:', error);
+  } catch (error: any) {
+    logger.error('Failed to start analytics module', {
+      service: 'analytics',
+      error: error.message
+    });
     throw error;
   }
 }

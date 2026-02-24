@@ -3,6 +3,7 @@
  * Converts raw health data into meaningful features for ML models
  */
 
+import logger from '../utils/logger';
 import {
   FeatureExtractionResult,
   VoiceFeatures,
@@ -161,7 +162,11 @@ export class FeatureEngineeringService {
             version: '1.0.0'
           });
         } catch (error) {
-          console.error(`Error extracting ${dataType} features:`, error);
+          logger.error('Error extracting features', {
+            service: 'FeatureEngineeringService',
+            dataType,
+            error: error.message
+          });
           // Continue with other feature types
         }
       }
@@ -174,7 +179,11 @@ export class FeatureEngineeringService {
   validateFeatures(features: Record<string, number>): boolean {
     for (const [key, value] of Object.entries(features)) {
       if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
-        console.warn(`Invalid feature value for ${key}: ${value}`);
+        logger.warn('Invalid feature value', {
+          service: 'FeatureEngineeringService',
+          featureKey: key,
+          value
+        });
         return false;
       }
     }
