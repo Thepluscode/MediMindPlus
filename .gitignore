@@ -15,8 +15,8 @@ services/*/node_modules/
 frontend/.expo/
 frontend/.expo-shared/
 
-# Build artifacts
-dist/
+# Build artifacts (frontend only, keep backend/dist for Railway)
+frontend/dist/
 build/
 
 # Railway

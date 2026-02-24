@@ -77,7 +77,7 @@ export class ICD10CodingService {
       logger.info('Analyzing clinical note for ICD-10 diagnosis codes', {
         service: 'icd10-coding',
         noteLength: params.clinicalNote.length,
-        hasSy mptoms: params.symptoms?.length || 0,
+        hasSymptoms: params.symptoms?.length || 0,
         hasDiagnoses: params.diagnoses?.length || 0
       });
 
