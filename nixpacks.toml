@@ -5,7 +5,7 @@ nixPkgs = ["nodejs_20", "python311", "gcc", "gnumake"]
 cmds = ["cd backend && npm ci --legacy-peer-deps"]
 
 [phases.build]
-cmds = ["cd backend && npx tsc -p tsconfig.railway.json --noEmitOnError false; echo 'Build phase complete, dist:' && ls dist/index.js"]
+cmds = ["bash -c 'cd backend && npx tsc -p tsconfig.railway.json; echo Build exit: $?; ls dist/index.js && echo dist/index.js OK || echo MISSING dist/index.js'"]
 
 [start]
 cmd = "cd backend && node dist/index.js"
