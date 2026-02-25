@@ -4,7 +4,7 @@
  * Based on research from Framingham Heart Study and UK Biobank longitudinal studies
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import logger from '../../utils/logger';
 
 export interface TimeSeriesDataPoint {

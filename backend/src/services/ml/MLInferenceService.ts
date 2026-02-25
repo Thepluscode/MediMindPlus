@@ -4,7 +4,7 @@
  * Supports TensorFlow.js models and provides SHAP-like explanations
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { Matrix } from 'ml-matrix';
 import logger from '../../utils/logger';
 import path from 'path';
