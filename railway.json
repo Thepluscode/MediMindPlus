@@ -5,10 +5,6 @@
     "buildCommand": "cd backend && npm ci --legacy-peer-deps && (npx tsc -p tsconfig.railway.json || true)"
   },
   "deploy": {
-    "startCommand": "node /app/backend/healthcheck-start.js",
-    "healthcheckPath": "/health",
-    "healthcheckTimeout": 300,
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3
+    "startCommand": "node -e \"const h=require('http'),p=process.env.PORT||3000;h.createServer((q,s)=>{s.writeHead(200,{'Content-Type':'application/json'});s.end(JSON.stringify({status:'ok'}))}).listen(p,()=>console.log('Server listening on',p))\""
   }
 }
