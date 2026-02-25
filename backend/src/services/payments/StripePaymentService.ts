@@ -12,9 +12,9 @@ export class StripePaymentService {
   private knex = getKnex();
 
   constructor() {
-    const secretKey = process.env.STRIPE_SECRET_KEY || '';
+    const secretKey = process.env.STRIPE_SECRET_KEY || 'sk_placeholder_not_configured';
 
-    if (!secretKey) {
+    if (!process.env.STRIPE_SECRET_KEY) {
       logger.warn('Stripe secret key not configured. Payments will not work.');
     }
 

@@ -5,6 +5,8 @@
     "buildCommand": "cd backend && npm ci --legacy-peer-deps && (npx tsc -p tsconfig.railway.json || true)"
   },
   "deploy": {
-    "startCommand": "node -e \"console.log('node ok'); try { require('/app/backend/dist/index.js'); } catch(e) { console.error('LOAD ERROR:', e.message); process.exit(0); }\""
+    "startCommand": "node /app/backend/dist/index.js",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 60
   }
 }

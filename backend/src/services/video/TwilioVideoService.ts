@@ -33,11 +33,11 @@ export class TwilioVideoService {
   private apiSecret: string;
 
   constructor() {
-    this.accountSid = process.env.TWILIO_ACCOUNT_SID || '';
-    this.apiKey = process.env.TWILIO_API_KEY || '';
-    this.apiSecret = process.env.TWILIO_API_SECRET || '';
+    this.accountSid = process.env.TWILIO_ACCOUNT_SID || 'ACplaceholder00000000000000000000000';
+    this.apiKey = process.env.TWILIO_API_KEY || 'SKplaceholder000000000000000000000';
+    this.apiSecret = process.env.TWILIO_API_SECRET || 'placeholder_secret_not_configured';
 
-    if (!this.accountSid || !this.apiKey || !this.apiSecret) {
+    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_API_KEY || !process.env.TWILIO_API_SECRET) {
       logger.warn('Twilio credentials not configured. Video consultations will not work.');
     }
 

@@ -144,15 +144,16 @@ export class StripePaymentService {
   ];
 
   constructor() {
-    const apiKey = process.env.STRIPE_SECRET_KEY;
-    if (!apiKey) {
-      throw new Error('STRIPE_SECRET_KEY environment variable not set');
-    }
+    const apiKey = process.env.STRIPE_SECRET_KEY || 'sk_placeholder_not_configured';
 
     this.stripe = new Stripe(apiKey, {
       apiVersion: '2024-11-20.acacia',
       typescript: true
     });
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      logger.warn('STRIPE_SECRET_KEY not set. Stripe payments will not work.');
+    }
   }
 
   /**
