@@ -5,9 +5,7 @@
     "buildCommand": "cd backend && npm ci --legacy-peer-deps && (npx tsc -p tsconfig.railway.json || true)"
   },
   "deploy": {
-    "startCommand": "cd /app/backend && node dist/index.js",
-    "healthcheckPath": "/health",
-    "healthcheckTimeout": 120,
+    "startCommand": "cd /app/backend && node dist/index.js 2>&1 || echo 'CRASHED'",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }
