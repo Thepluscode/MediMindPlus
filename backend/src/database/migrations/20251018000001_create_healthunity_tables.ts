@@ -3,7 +3,7 @@ import { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   // Symptom assessments table for AI diagnostics
   await knex.schema.createTable('symptom_assessments', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.text('symptoms').notNullable(); // JSON array of symptoms
     table.text('ai_assessment').nullable(); // AI-generated assessment
@@ -21,11 +21,11 @@ export async function up(knex: Knex): Promise<void> {
 
   // Epidemic tracking table
   await knex.schema.createTable('epidemic_tracking', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('user_id').nullable(); // Nullable for anonymous reporting
     table.string('disease_category', 100).notNullable(); // AIDS, COVID, Mental Health, etc.
     table.text('symptoms').notNullable(); // JSON array
-    table.geography('location').nullable(); // PostGIS geography type
+    table.string('location', 255).nullable(); // lat,lng or location string
     table.string('region', 100).nullable();
     table.string('country', 100).nullable();
     table.boolean('is_anonymous').defaultTo(true);
@@ -43,7 +43,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Mental health tracking table
   await knex.schema.createTable('mental_health_tracking', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.integer('mood_score').nullable(); // 1-10 scale
     table.integer('anxiety_level').nullable(); // 1-10 scale
@@ -64,7 +64,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Community alerts table
   await knex.schema.createTable('community_alerts', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.string('alert_type', 50).notNullable(); // epidemic_outbreak, mental_health_crisis, etc.
     table.string('disease_category', 100).nullable();
     table.string('severity', 20).notNullable(); // low, medium, high, critical
@@ -89,7 +89,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Community forums table
   await knex.schema.createTable('community_forums', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.string('name', 200).notNullable();
     table.text('description').nullable();
     table.string('category', 100).notNullable(); // support, education, discussion
@@ -108,7 +108,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Forum posts table
   await knex.schema.createTable('forum_posts', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('forum_id').notNullable().references('id').inTable('community_forums').onDelete('CASCADE');
     table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.uuid('parent_post_id').nullable().references('id').inTable('forum_posts').onDelete('CASCADE');
@@ -131,7 +131,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Medical ID table (for emergencies and refugee scenarios)
   await knex.schema.createTable('medical_ids', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('user_id').notNullable().unique().references('id').inTable('users').onDelete('CASCADE');
     table.string('global_id').notNullable().unique(); // Blockchain-based global ID
     table.text('emergency_contacts').notNullable(); // JSON array
@@ -153,7 +153,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Multilingual content table
   await knex.schema.createTable('multilingual_content', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.string('content_type', 50).notNullable(); // article, alert, resource, ui_text
     table.string('content_key', 200).notNullable(); // Unique identifier for the content
     table.string('language', 10).notNullable();
@@ -169,7 +169,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Enhanced telemedicine sessions (extends existing consultations)
   await knex.schema.createTable('telemedicine_sessions', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.string('consultation_id').notNullable(); // Links to existing consultation
     table.string('session_type', 30).notNullable(); // video, audio, multi-party
     table.text('participants').notNullable(); // JSON array of participant IDs
@@ -195,7 +195,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Patient education resources
   await knex.schema.createTable('education_resources', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.string('title', 300).notNullable();
     table.string('category', 100).notNullable(); // prevention, treatment, awareness
     table.string('topic', 100).notNullable(); // AIDS, mental_health, general_wellness
@@ -221,7 +221,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // User resource interactions
   await knex.schema.createTable('resource_interactions', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.uuid('resource_id').notNullable().references('id').inTable('education_resources').onDelete('CASCADE');
     table.string('interaction_type', 30).notNullable(); // view, complete, bookmark, rate

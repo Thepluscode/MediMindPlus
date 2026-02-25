@@ -12,7 +12,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Provider-Patient Relationships Table
   await knex.schema.createTable('provider_patient_assignments', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('provider_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.uuid('patient_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.string('relationship_type').notNullable(); // primary, consulting, referred
@@ -29,7 +29,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Patient Risk Assessments Table
   await knex.schema.createTable('patient_risk_assessments', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('patient_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.string('risk_category').notNullable(); // Cardiovascular, Diabetes, Cancer, Cognitive, etc.
     table.integer('risk_score').notNullable(); // 0-100
@@ -52,7 +52,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Clinical Alerts Table
   await knex.schema.createTable('clinical_alerts', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('patient_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.uuid('provider_id').nullable().references('id').inTable('users').onDelete('SET NULL');
     table.string('alert_type').notNullable(); // Critical Risk, Lab Result, Abnormal Finding, etc.
@@ -77,7 +77,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Appointments Table
   await knex.schema.createTable('appointments', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('patient_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.uuid('provider_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.string('appointment_type').notNullable(); // Follow-up, Consultation, Annual, etc.
@@ -102,7 +102,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Provider Stats Cache Table (for dashboard performance)
   await knex.schema.createTable('provider_stats_cache', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('provider_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.integer('total_patients').defaultTo(0);
     table.integer('active_patients').defaultTo(0);

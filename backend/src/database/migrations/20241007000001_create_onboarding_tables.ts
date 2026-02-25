@@ -3,7 +3,7 @@ import { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   // Patient Onboarding Progress Table
   await knex.schema.createTable('patient_onboarding', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.integer('current_step').defaultTo(0);
     table.boolean('is_completed').defaultTo(false);
@@ -23,7 +23,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Medical Record Connections Table
   await knex.schema.createTable('medical_record_connections', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.string('provider_name').notNullable(); // Epic, Cerner, Apple Health, etc.
     table.string('provider_type').notNullable(); // EMR, PHR, DEVICE
@@ -41,7 +41,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Connected Devices Table
   await knex.schema.createTable('connected_devices', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.string('device_name').notNullable(); // Apple Watch, Fitbit, etc.
     table.string('device_type').notNullable(); // FITNESS_TRACKER, MEDICAL_DEVICE, SMART_HOME
@@ -62,7 +62,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // Health Goals Table
   await knex.schema.createTable('health_goals', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.string('goal_category').notNullable(); // Prevention, Wellness, Performance, Management
     table.string('goal_name').notNullable();
@@ -83,7 +83,7 @@ export async function up(knex: Knex): Promise<void> {
 
   // User Consent Records Table
   await knex.schema.createTable('user_consents', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.string('consent_type').notNullable(); // data_processing, data_sharing, research, marketing
     table.boolean('consent_given').notNullable();
