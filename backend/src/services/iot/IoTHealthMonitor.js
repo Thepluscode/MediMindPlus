@@ -2,7 +2,7 @@ const mqtt = require('mqtt');
 const WebSocket = require('ws');
 const { EventEmitter } = require('events');
 const redis = require('redis');
-const tensorflow = require('@tensorflow/tfjs-node');
+const tensorflow = require('@tensorflow/tfjs');
 const { InfluxDB, Point } = require('@influxdata/influxdb-client');
 const logger = require('../../config/logger');
 

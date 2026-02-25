@@ -1,4 +1,4 @@
-const tensorflow = require('@tensorflow/tfjs-node');
+const tensorflow = require('@tensorflow/tfjs');
 const logger = require('../../config/logger');
 const path = require('path');
 

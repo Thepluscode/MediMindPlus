@@ -1,5 +1,5 @@
 // backend/ai/AIModelService.js
-const tf = require('@tensorflow/tfjs-node');
+const tf = require('@tensorflow/tfjs');
 const { PythonShell } = require('python-shell');
 const path = require('path');
 const fs = require('fs').promises;
