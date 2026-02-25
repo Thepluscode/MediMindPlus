@@ -5,6 +5,8 @@
     "buildCommand": "cd backend && npm ci --legacy-peer-deps && (npx tsc -p tsconfig.railway.json || true)"
   },
   "deploy": {
-    "startCommand": "node -e \"const h=require('http'),p=process.env.PORT||3000;h.createServer((q,s)=>{s.writeHead(200,{'Content-Type':'application/json'});s.end(JSON.stringify({status:'ok'}))}).listen(p,()=>console.log('Server listening on',p))\""
+    "startCommand": "cd /app/backend && node dist/index.js",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
   }
 }
