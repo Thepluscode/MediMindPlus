@@ -168,6 +168,18 @@ export async function up(knex: Knex): Promise<void> {
   // EMPLOYER HEALTH DASHBOARD
   // ========================================
 
+  await knex.schema.createTable('employers', (table) => {
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.string('company_name', 255).notNullable();
+    table.string('industry', 100);
+    table.integer('employee_count');
+    table.string('plan_tier', 50);
+    table.decimal('monthly_fee', 10, 2);
+    table.timestamp('contract_start');
+    table.timestamp('contract_end');
+    table.timestamps(true, true);
+  });
+
   await knex.schema.createTable('employer_health_dashboards', (table) => {
     table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
     table.uuid('employer_id').references('id').inTable('employers').notNullable();
@@ -194,25 +206,13 @@ export async function up(knex: Knex): Promise<void> {
     table.index('last_updated');
   });
 
-  await knex.schema.createTable('employers', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    table.string('company_name', 255).notNullable();
-    table.string('industry', 100);
-    table.integer('employee_count');
-    table.string('plan_tier', 50);
-    table.decimal('monthly_fee', 10, 2);
-    table.timestamp('contract_start');
-    table.timestamp('contract_end');
-    table.timestamps(true, true);
-  });
-
   // ========================================
   // PROVIDER PERFORMANCE
   // ========================================
 
   await knex.schema.createTable('provider_performance_profiles', (table) => {
     table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    table.uuid('provider_id').references('id').inTable('providers').notNullable();
+    table.uuid('provider_id').notNullable(); // FK added after providers table is created in later migration
     table.string('provider_name', 255);
     table.string('specialty', 100);
     table.jsonb('quality_metrics');
@@ -230,15 +230,6 @@ export async function up(knex: Knex): Promise<void> {
 
     table.index('provider_id');
     table.index('specialty');
-  });
-
-  await knex.schema.createTable('providers', (table) => {
-    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
-    table.string('name', 255).notNullable();
-    table.string('specialty', 100);
-    table.string('license_number', 100);
-    table.string('npi_number', 20);
-    table.timestamps(true, true);
   });
 
   // ========================================
@@ -566,7 +557,6 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTableIfExists('predictive_insurance_profiles');
   await knex.schema.dropTableIfExists('federated_global_models');
   await knex.schema.dropTableIfExists('federated_network_nodes');
-  await knex.schema.dropTableIfExists('providers');
   await knex.schema.dropTableIfExists('provider_performance_profiles');
   await knex.schema.dropTableIfExists('employers');
   await knex.schema.dropTableIfExists('employer_health_dashboards');
