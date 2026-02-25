@@ -12,41 +12,41 @@ dotenv.config();
 const envSchema = z.object({
   // Server Configuration
   NODE_ENV: z.enum(['development', 'staging', 'production']).default('development'),
-  PORT: z.string().transform(Number).default(3000),
+  PORT: z.string().transform(Number).default('3000'),
   API_URL: z.string().url().optional(),
-  
+
   // Database Configuration
   DB_HOST: z.string().default('localhost'),
-  DB_PORT: z.string().transform(Number).default(5432),
+  DB_PORT: z.string().transform(Number).default('5432'),
   DB_NAME: z.string().default('medimind'),
   DB_USER: z.string().default('postgres'),
   DB_PASSWORD: z.string().default('password'),
-  DB_SSL: z.string().transform(Boolean).default(false),
+  DB_SSL: z.string().transform(Boolean).default('false'),
   DATABASE_URL: z.string().optional(),
-  
+
   // Redis Configuration
   REDIS_HOST: z.string().default('localhost'),
-  REDIS_PORT: z.string().transform(Number).default(6379),
+  REDIS_PORT: z.string().transform(Number).default('6379'),
   REDIS_PASSWORD: z.string().optional(),
   REDIS_URL: z.string().optional(),
-  
+
   // JWT Configuration
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default('24h'),
   JWT_REFRESH_SECRET: z.string().min(32),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
-  
+
   // Security Configuration
-  BCRYPT_ROUNDS: z.string().transform(Number).default(12),
+  BCRYPT_ROUNDS: z.string().transform(Number).default('12'),
   SESSION_SECRET: z.string().min(32),
   CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:3001'),
-  
+
   // Rate Limiting
-  RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default(900000), // 15 minutes
-  RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default(100),
-  
+  RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default('900000'), // 15 minutes
+  RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default('100'),
+
   // File Upload
-  MAX_FILE_SIZE: z.string().transform(Number).default(10485760), // 10MB
+  MAX_FILE_SIZE: z.string().transform(Number).default('10485760'), // 10MB
   UPLOAD_PATH: z.string().default('./uploads'),
   
   // Email Configuration
@@ -80,19 +80,19 @@ const envSchema = z.object({
   DATADOG_API_KEY: z.string().optional(),
   
   // Feature Flags
-  ENABLE_SWAGGER: z.string().transform(Boolean).default(true),
-  ENABLE_METRICS: z.string().transform(Boolean).default(true),
-  ENABLE_AUDIT_LOGS: z.string().transform(Boolean).default(true),
-  ENABLE_RATE_LIMITING: z.string().transform(Boolean).default(true),
-  
+  ENABLE_SWAGGER: z.string().transform(Boolean).default('true'),
+  ENABLE_METRICS: z.string().transform(Boolean).default('true'),
+  ENABLE_AUDIT_LOGS: z.string().transform(Boolean).default('true'),
+  ENABLE_RATE_LIMITING: z.string().transform(Boolean).default('true'),
+
   // HIPAA Compliance
   ENCRYPTION_KEY: z.string().min(32),
-  AUDIT_LOG_RETENTION_DAYS: z.string().transform(Number).default(2555), // 7 years
-  PHI_ENCRYPTION_ENABLED: z.string().transform(Boolean).default(true),
-  
+  AUDIT_LOG_RETENTION_DAYS: z.string().transform(Number).default('2555'), // 7 years
+  PHI_ENCRYPTION_ENABLED: z.string().transform(Boolean).default('true'),
+
   // FDA Compliance
-  FDA_SUBMISSION_MODE: z.string().transform(Boolean).default(false),
-  CLINICAL_TRIAL_MODE: z.string().transform(Boolean).default(false),
+  FDA_SUBMISSION_MODE: z.string().transform(Boolean).default('false'),
+  CLINICAL_TRIAL_MODE: z.string().transform(Boolean).default('false'),
   DEVICE_IDENTIFIER: z.string().optional(),
 });
 
