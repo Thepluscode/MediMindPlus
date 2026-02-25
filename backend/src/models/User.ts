@@ -15,31 +15,30 @@ export class User {
   @MinLength(8)
   password: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'first_name', nullable: true })
   firstName: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'last_name', nullable: true })
   lastName: string;
 
-  @Column({ default: false })
+  @Column({ name: 'is_email_verified', default: false })
   isEmailVerified: boolean;
 
-  @Column({ nullable: true })
+  @Column({ name: 'verification_token', nullable: true })
   verificationToken: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'password_reset_token', nullable: true })
   passwordResetToken: string;
 
-  @Column({ nullable: true })
+  @Column({ name: 'password_reset_expires', nullable: true })
   passwordResetExpires: Date;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  // Add any additional fields as needed
   @Column({ type: 'jsonb', nullable: true })
   metadata: any;
 }
