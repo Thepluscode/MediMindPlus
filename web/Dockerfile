@@ -1,20 +1,13 @@
-# Base image
-FROM node:18-alpine
+FROM node:20-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
 COPY package.json package-lock.json ./
+RUN npm install --legacy-peer-deps
 
-# Install dependencies
-RUN npm install
+COPY server.js ./
+COPY out/ ./out/
 
-# Copy source code
-COPY . .
+EXPOSE 3000
 
-# Expose port
-EXPOSE 5173
-
-# Start development server
-CMD ["npm", "run", "dev", "--", "--host"]
+CMD ["node", "server.js"]
