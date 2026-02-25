@@ -2,7 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd backend && npm ci --legacy-peer-deps && (npx tsc -p tsconfig.railway.json || true)"
+    "buildCommand": "cd backend && npm ci --legacy-peer-deps && (npx tsc -p tsconfig.railway.json || true) && (NODE_ENV=production npx knex --knexfile knexfile.ts migrate:latest || true)"
   },
   "deploy": {
     "startCommand": "node /app/backend/dist/index.js",
