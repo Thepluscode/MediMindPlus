@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "express": "^4.21.2",
     "@stripe/react-stripe-js": "4.0.2",
     "@stripe/stripe-js": "7.8.0",
     "@supabase/supabase-js": "2.57.4",
@@ -36,7 +37,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "type": "module",
   "version": "0.0.0"
