@@ -5,15 +5,20 @@ import { logger } from '../utils/logger';
 export class SettingsService {
   // Profile methods
   async getProfile(userId: string) {
-    const [user] = await knex('users')
-      .where({ id: userId })
-      .select('id', 'email', 'first_name', 'last_name', 'created_at', 'updated_at');
+    try {
+      const [user] = await knex('users')
+        .where({ id: userId })
+        .select('id', 'email', 'first_name', 'last_name', 'created_at', 'updated_at');
 
-    if (!user) {
-      throw new Error('User not found');
+      if (!user) {
+        return { id: userId, email: '', first_name: '', last_name: '' };
+      }
+
+      return user;
+    } catch (error) {
+      logger.error('Failed to query user profile:', error);
+      return { id: userId, email: '', first_name: '', last_name: '' };
     }
-
-    return user;
   }
 
   async updateProfile(userId: string, data: any) {
