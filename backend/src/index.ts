@@ -211,6 +211,69 @@ app.get(`${API_PREFIX}/audit/logs`, authController.authenticate, (req: any, res)
   });
 });
 
+// Wearable devices listing (GET /api/wearable/devices)
+app.get(`${API_PREFIX}/wearable/devices`, authController.authenticate, (req: any, res) => {
+  res.json({
+    success: true,
+    devices: [],
+  });
+});
+
+// Drug interaction checker (POST /api/advanced/drug-interactions)
+app.post(`${API_PREFIX}/advanced/drug-interactions`, authController.authenticate, (req: any, res) => {
+  const { medications = [], allergies = [], conditions = [], isPregnant, isBreastfeeding } = req.body;
+
+  const knownInteractions: Record<string, Record<string, any>> = {
+    warfarin: {
+      aspirin: { severity: 'critical', description: 'Increased risk of bleeding when combined. Both medications affect blood clotting.', recommendation: 'Consult physician immediately. May require dosage adjustment or alternative medication.' },
+      ibuprofen: { severity: 'high', description: 'NSAIDs can increase anticoagulant effect of warfarin, raising bleeding risk.', recommendation: 'Avoid combination if possible. Monitor INR closely if co-administration is necessary.' },
+    },
+    lisinopril: {
+      ibuprofen: { severity: 'high', description: 'NSAIDs may reduce the effectiveness of ACE inhibitors and increase kidney damage risk.', recommendation: 'Use acetaminophen instead. Monitor blood pressure and kidney function.' },
+      potassium: { severity: 'moderate', description: 'ACE inhibitors can increase potassium levels; combining with potassium supplements may cause hyperkalemia.', recommendation: 'Monitor potassium levels regularly.' },
+    },
+    metformin: {
+      alcohol: { severity: 'high', description: 'Alcohol increases risk of lactic acidosis with metformin.', recommendation: 'Avoid alcohol while taking metformin.' },
+    },
+    simvastatin: {
+      clarithromycin: { severity: 'critical', description: 'Clarithromycin can greatly increase simvastatin levels, causing myopathy or rhabdomyolysis.', recommendation: 'Use alternative antibiotic or switch to pravastatin.' },
+    },
+  };
+
+  const interactions: any[] = [];
+  const medNames = medications.map((m: any) => (m.name || '').toLowerCase());
+
+  for (let i = 0; i < medNames.length; i++) {
+    for (let j = i + 1; j < medNames.length; j++) {
+      const a = medNames[i];
+      const b = medNames[j];
+      const interaction =
+        knownInteractions[a]?.[b] || knownInteractions[b]?.[a];
+      if (interaction) {
+        interactions.push({
+          severity: interaction.severity,
+          drugs: [medications[i].name, medications[j].name],
+          description: interaction.description,
+          recommendation: interaction.recommendation,
+        });
+      }
+    }
+  }
+
+  res.json({
+    success: true,
+    interactions,
+    summary: {
+      total: interactions.length,
+      critical: interactions.filter((i) => i.severity === 'critical').length,
+      high: interactions.filter((i) => i.severity === 'high').length,
+      moderate: interactions.filter((i) => i.severity === 'moderate').length,
+      low: interactions.filter((i) => i.severity === 'low').length,
+    },
+    checkedAt: new Date().toISOString(),
+  });
+});
+
 // Store database reference in app.locals for routes to access
 // app.locals.db = knex; // Commented out - will be set after initialization
 
