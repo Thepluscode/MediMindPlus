@@ -150,7 +150,7 @@ export default function DeviceIntegrationPage() {
   const handleConnect = async (device: Device) => {
     try {
       setConnectedDevices(prev => [...prev, { ...device, connected: true, lastSync: 'Just now' }]);
-      await wearableService.connectDevice(device.type).catch(() => {/* ignore API error, optimistic update */});
+      await wearableService.connectDevice(device.type, device.brand).catch(() => {/* ignore API error, optimistic update */});
       logger.info('Device connected', { service: 'device-integration', deviceId: device.id, deviceName: device.name });
     } catch (error) {
       logger.error('Failed to connect device', { service: 'device-integration', deviceId: device.id, error: error instanceof Error ? error.message : String(error) });

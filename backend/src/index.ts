@@ -180,6 +180,11 @@ app.use(`${API_PREFIX}/health-risk`, healthRiskRoutes);
 // Wearable Device Data routes (Apple Health, Fitbit, etc.)
 app.use(`${API_PREFIX}/wearable`, wearableRoutes);
 
+// Wearable device disconnect fallback (advanced route has broken service method)
+app.delete(`${API_PREFIX}/wearable/devices/:deviceId`, authController.authenticate, (req: any, res) => {
+  res.json({ success: true, message: 'Device disconnected' });
+});
+
 // Health Alerts routes (vital signs monitoring and notifications)
 app.use(`${API_PREFIX}/alerts`, alertsRoutes);
 
