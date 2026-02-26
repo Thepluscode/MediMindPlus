@@ -298,6 +298,101 @@ app.post(`${API_PREFIX}/advanced/drug-interactions`, authController.authenticate
 // Store database reference in app.locals for routes to access
 // app.locals.db = knex; // Commented out - will be set after initialization
 
+// ============================================================================
+// ROLES & PERMISSIONS API
+// ============================================================================
+
+// In-memory store for role permissions (persists for lifetime of process).
+// In production this would be a DB table; for now it starts from sensible defaults.
+const rolePermissionsStore: Record<string, string[]> = {
+  admin: [
+    'users.create', 'users.read', 'users.update', 'users.delete',
+    'team.view', 'team.manage',
+    'health_data.read', 'health_data.update', 'health_data.delete',
+    'analytics.view', 'analytics.export',
+    'settings.view', 'settings.manage',
+    'audit_logs.view',
+    'billing.manage',
+  ],
+  manager: [
+    'users.read', 'users.update',
+    'team.view',
+    'health_data.read', 'health_data.update',
+    'analytics.view', 'analytics.export',
+    'settings.view',
+    'audit_logs.view',
+  ],
+  operator: [
+    'users.read',
+    'health_data.read',
+    'analytics.view',
+    'settings.view',
+  ],
+};
+
+const allPermissionsDefinition = [
+  { id: 'users.create',        name: 'Create Users',       description: 'Create new user accounts',           category: 'users' },
+  { id: 'users.read',          name: 'View Users',         description: 'View user profiles and information',  category: 'users' },
+  { id: 'users.update',        name: 'Update Users',       description: 'Edit user profiles and settings',     category: 'users' },
+  { id: 'users.delete',        name: 'Delete Users',       description: 'Remove user accounts',               category: 'users' },
+  { id: 'team.view',           name: 'View Team',          description: 'View team members',                  category: 'users' },
+  { id: 'team.manage',         name: 'Manage Team',        description: 'Invite and manage team members',     category: 'users' },
+  { id: 'health_data.read',    name: 'View Health Data',   description: 'Access patient health records',      category: 'health_data' },
+  { id: 'health_data.update',  name: 'Update Health Data', description: 'Modify patient health records',      category: 'health_data' },
+  { id: 'health_data.delete',  name: 'Delete Health Data', description: 'Remove health records',              category: 'health_data' },
+  { id: 'analytics.view',      name: 'View Analytics',     description: 'Access analytics dashboards',        category: 'analytics' },
+  { id: 'analytics.export',    name: 'Export Analytics',   description: 'Export analytics reports',           category: 'analytics' },
+  { id: 'settings.view',       name: 'View Settings',      description: 'View system settings',               category: 'settings' },
+  { id: 'settings.manage',     name: 'Manage Settings',    description: 'Modify system settings',             category: 'settings' },
+  { id: 'audit_logs.view',     name: 'View Audit Logs',    description: 'Access audit logs',                  category: 'settings' },
+  { id: 'billing.manage',      name: 'Manage Billing',     description: 'Handle billing and subscriptions',   category: 'billing' },
+];
+
+const roleDescriptions: Record<string, string> = {
+  admin: 'Full system access with all permissions',
+  manager: 'Manage operations and view analytics',
+  operator: 'Basic access to view data and analytics',
+};
+
+// GET /api/roles — list all roles with their permissions
+app.get(`${API_PREFIX}/roles`, authController.authenticate, (req: any, res) => {
+  const roles = Object.entries(rolePermissionsStore).map(([role, permissions]) => ({
+    role,
+    permissions,
+    description: roleDescriptions[role] || '',
+  }));
+  res.json({ success: true, roles, allPermissions: allPermissionsDefinition });
+});
+
+// GET /api/roles/:role/permissions — get permissions for a specific role
+app.get(`${API_PREFIX}/roles/:role/permissions`, authController.authenticate, (req: any, res) => {
+  const { role } = req.params;
+  if (!rolePermissionsStore[role]) {
+    return res.status(404).json({ success: false, error: `Role '${role}' not found` });
+  }
+  res.json({ success: true, role, permissions: rolePermissionsStore[role] });
+});
+
+// PUT /api/roles/:role/permissions — update permissions for a role
+app.put(`${API_PREFIX}/roles/:role/permissions`, authController.authenticate, (req: any, res) => {
+  const { role } = req.params;
+  const { permissions } = req.body;
+  if (!rolePermissionsStore[role]) {
+    return res.status(404).json({ success: false, error: `Role '${role}' not found` });
+  }
+  if (!Array.isArray(permissions)) {
+    return res.status(400).json({ success: false, error: 'permissions must be an array' });
+  }
+  const validIds = new Set(allPermissionsDefinition.map(p => p.id));
+  const invalid = permissions.filter(p => !validIds.has(p));
+  if (invalid.length) {
+    return res.status(400).json({ success: false, error: `Unknown permissions: ${invalid.join(', ')}` });
+  }
+  rolePermissionsStore[role] = permissions;
+  logger.info(`Permissions updated for role '${role}' by user ${req.user?.id}`);
+  res.json({ success: true, role, permissions: rolePermissionsStore[role], description: roleDescriptions[role] || '' });
+});
+
 // Revolutionary Features routes (12 billion-dollar features)
 // Virtual Health Twin, Mental Health Crisis, Multi-Omics, Longevity, Employer Dashboard,
 // Provider Performance, Federated Learning, Predictive Insurance, Drug Discovery,
