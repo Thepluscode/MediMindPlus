@@ -1,0 +1,772 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  TextInput,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
+import { Typography, LoadingSpinner } from '../components/ui';
+import providerAPI, { Prescription, PatientSummary } from '../services/providerAPI';
+import { theme } from '../theme/theme';
+
+interface PrescriptionManagementScreenProps {
+  navigation: any;
+  route?: any;
+}
+
+const PrescriptionManagementScreen: React.FC<PrescriptionManagementScreenProps> = ({
+  navigation,
+  route,
+}) => {
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [filteredPrescriptions, setFilteredPrescriptions] = useState<Prescription[]>([]);
+  const [filter, setFilter] = useState<string>(route?.params?.filter || 'active');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [patients, setPatients] = useState<PatientSummary[]>([]);
+
+  // Create prescription form state
+  const [newPrescription, setNewPrescription] = useState<Prescription>({
+    patientId: route?.params?.patientId || '',
+    medication: '',
+    dosage: '',
+    frequency: '',
+    route: 'oral',
+    duration: '',
+    quantity: 0,
+    refills: 0,
+    instructions: '',
+    startDate: new Date().toISOString().split('T')[0],
+    status: 'active',
+  });
+
+  useEffect(() => {
+    loadPrescriptions();
+    loadPatients();
+
+    if (route?.params?.action === 'create') {
+      setShowCreateModal(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    filterPrescriptions();
+  }, [prescriptions, filter]);
+
+  const loadPrescriptions = async () => {
+    try {
+      setLoading(true);
+      const data = await providerAPI.getPrescriptions();
+      setPrescriptions(data);
+    } catch (error) {
+      // Error loading prescriptions
+      Alert.alert('Error', 'Failed to load prescriptions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadPatients = async () => {
+    try {
+      const data = await providerAPI.getPatients();
+      setPatients(data);
+    } catch (error) {
+      // Error loading patients
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadPrescriptions();
+    setRefreshing(false);
+  };
+
+  const filterPrescriptions = () => {
+    let filtered = [...prescriptions];
+
+    if (filter === 'active') {
+      filtered = filtered.filter((rx) => rx.status === 'active');
+    } else if (filter === 'pending') {
+      filtered = filtered.filter((rx) => rx.status === 'active' && !rx.filledDate);
+    } else if (filter === 'completed') {
+      filtered = filtered.filter((rx) => rx.status === 'completed');
+    } else if (filter === 'cancelled') {
+      filtered = filtered.filter((rx) => rx.status === 'cancelled');
+    }
+
+    // Sort by prescribedDate (most recent first)
+    filtered.sort((a, b) => {
+      const dateA = a.prescribedDate ? new Date(a.prescribedDate).getTime() : 0;
+      const dateB = b.prescribedDate ? new Date(b.prescribedDate).getTime() : 0;
+      return dateB - dateA;
+    });
+
+    setFilteredPrescriptions(filtered);
+  };
+
+  const handleCreatePrescription = async () => {
+    try {
+      if (!newPrescription.patientId) {
+        Alert.alert('Error', 'Please select a patient');
+        return;
+      }
+      if (!newPrescription.medication) {
+        Alert.alert('Error', 'Medication name is required');
+        return;
+      }
+      if (!newPrescription.dosage) {
+        Alert.alert('Error', 'Dosage is required');
+        return;
+      }
+      if (!newPrescription.frequency) {
+        Alert.alert('Error', 'Frequency is required');
+        return;
+      }
+
+      await providerAPI.createPrescription(newPrescription);
+      Alert.alert('Success', 'Prescription created successfully!');
+      setShowCreateModal(false);
+      resetForm();
+      await loadPrescriptions();
+    } catch (error) {
+      // Error creating prescription
+      Alert.alert('Error', 'Failed to create prescription');
+    }
+  };
+
+  const handleUpdateStatus = async (prescriptionId: string, status: string) => {
+    try {
+      await providerAPI.updatePrescription(prescriptionId, { status: status as any });
+      Alert.alert('Success', 'Prescription status updated');
+      await loadPrescriptions();
+    } catch (error) {
+      // Error updating prescription
+      Alert.alert('Error', 'Failed to update prescription');
+    }
+  };
+
+  const resetForm = () => {
+    setNewPrescription({
+      patientId: route?.params?.patientId || '',
+      medication: '',
+      dosage: '',
+      frequency: '',
+      route: 'oral',
+      duration: '',
+      quantity: 0,
+      refills: 0,
+      instructions: '',
+      startDate: new Date().toISOString().split('T')[0],
+      status: 'active',
+    });
+  };
+
+  const getStatusColor = (status: string): string => {
+    switch (status) {
+      case 'active':
+        return '#4CAF50';
+      case 'completed':
+        return '#9E9E9E';
+      case 'cancelled':
+        return '#F44336';
+      case 'expired':
+        return '#FF9800';
+      default:
+        return '#757575';
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <LoadingSpinner size="large" />
+        <Typography variant="body" style={styles.loadingText}>Loading prescriptions...</Typography>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={theme.gradients.primary.colors}
+        start={theme.gradients.primary.start}
+        end={theme.gradients.primary.end}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.headerTopRow}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="arrow-back" color="white" size={28} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowCreateModal(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Create new prescription"
+          >
+            <Ionicons name="add-circle" color="white" size={28} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.iconContainer}>
+          <Ionicons name="medical" color="white" size={60} />
+        </View>
+        <Typography variant="h2" weight="bold" style={styles.headerTitle}>Prescriptions</Typography>
+        <Typography variant="body" style={styles.headerSubtitle}>Manage patient prescriptions</Typography>
+      </LinearGradient>
+
+      {/* Filter Chips */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
+        contentContainerStyle={styles.filterContainer}
+      >
+        <TouchableOpacity
+          style={[styles.filterChip, filter === 'active' && styles.filterChipActive]}
+          onPress={() => setFilter('active')}
+        >
+          <Typography variant="body" style={[styles.filterChipText, filter === 'active' && styles.filterChipTextActive]}>
+            Active
+          </Typography>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterChip, filter === 'pending' && styles.filterChipActive]}
+          onPress={() => setFilter('pending')}
+        >
+          <Typography variant="body" style={[styles.filterChipText, filter === 'pending' && styles.filterChipTextActive]}>
+            Pending
+          </Typography>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterChip, filter === 'completed' && styles.filterChipActive]}
+          onPress={() => setFilter('completed')}
+        >
+          <Typography variant="body" style={[styles.filterChipText, filter === 'completed' && styles.filterChipTextActive]}>
+            Completed
+          </Typography>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.filterChip, filter === 'cancelled' && styles.filterChipActive]}
+          onPress={() => setFilter('cancelled')}
+        >
+          <Typography variant="body" style={[styles.filterChipText, filter === 'cancelled' && styles.filterChipTextActive]}>
+            Cancelled
+          </Typography>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Prescription List */}
+      <ScrollView
+        style={styles.listContainer}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {filteredPrescriptions.length > 0 ? (
+          filteredPrescriptions.map((prescription) => (
+            <View key={prescription.id} style={styles.prescriptionCard}>
+              <View style={styles.prescriptionContent}>
+                <View style={styles.prescriptionHeader}>
+                  <View style={styles.prescriptionInfo}>
+                    <View style={styles.medicationRow}>
+                      <Ionicons name="medical" size={24} color={theme.colors.primary} />
+                      <Typography variant="body" style={styles.medicationName}>{prescription.medication}</Typography>
+                    </View>
+
+                    <Typography variant="body" style={styles.patientName}>{prescription.patientName}</Typography>
+
+                    <View style={styles.prescriptionDetails}>
+                      <Typography variant="body" style={styles.detailText}>
+                        <Typography variant="body" style={styles.detailLabel}>Dosage: </Typography>
+                        {prescription.dosage}
+                      </Typography>
+                      <Typography variant="body" style={styles.detailText}>
+                        <Typography variant="body" style={styles.detailLabel}>Frequency: </Typography>
+                        {prescription.frequency}
+                      </Typography>
+                      <Typography variant="body" style={styles.detailText}>
+                        <Typography variant="body" style={styles.detailLabel}>Route: </Typography>
+                        {prescription.route}
+                      </Typography>
+                      <Typography variant="body" style={styles.detailText}>
+                        <Typography variant="body" style={styles.detailLabel}>Duration: </Typography>
+                        {prescription.duration}
+                      </Typography>
+                      <Typography variant="body" style={styles.detailText}>
+                        <Typography variant="body" style={styles.detailLabel}>Quantity: </Typography>
+                        {prescription.quantity} • {prescription.refills} refills
+                      </Typography>
+                      <Typography variant="body" style={styles.detailText}>
+                        <Typography variant="body" style={styles.detailLabel}>Start Date: </Typography>
+                        {new Date(prescription.startDate).toLocaleDateString()}
+                      </Typography>
+                    </View>
+
+                    {prescription.instructions && (
+                      <View style={styles.instructionsBox}>
+                        <Typography variant="body" style={styles.instructionsLabel}>Instructions:</Typography>
+                        <Typography variant="body" style={styles.instructionsText}>{prescription.instructions}</Typography>
+                      </View>
+                    )}
+
+                    {prescription.filledDate && (
+                      <Typography variant="body" style={styles.filledText}>
+                        ✓ Filled on {new Date(prescription.filledDate).toLocaleDateString()}
+                      </Typography>
+                    )}
+                  </View>
+
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(prescription.status) }]}>
+                    <Typography variant="body" style={styles.statusText}>{prescription.status}</Typography>
+                  </View>
+                </View>
+
+                {/* Action Buttons */}
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => navigation.navigate('PatientDetails', { patientId: prescription.patientId })}
+                  >
+                    <Ionicons name="person" size={18} color={theme.colors.primary} />
+                    <Typography variant="body" style={styles.actionButtonText}>View Patient</Typography>
+                  </TouchableOpacity>
+
+                  {prescription.status === 'active' && !prescription.filledDate && (
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={() =>
+                        handleUpdateStatus(prescription.id!, 'active')
+                      }
+                    >
+                      <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
+                      <Typography variant="body" style={styles.actionButtonText}>Mark Filled</Typography>
+                    </TouchableOpacity>
+                  )}
+
+                  {prescription.status === 'active' && (
+                    <>
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => handleUpdateStatus(prescription.id!, 'completed')}
+                      >
+                        <Ionicons name="checkmark-done" size={18} color="#4CAF50" />
+                        <Typography variant="body" style={styles.actionButtonText}>Complete</Typography>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => handleUpdateStatus(prescription.id!, 'cancelled')}
+                      >
+                        <Ionicons name="close-circle" size={18} color="#F44336" />
+                        <Typography variant="body" style={styles.actionButtonText}>Cancel</Typography>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              </View>
+            </View>
+          ))
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="medical" size={64} color="#CCC" />
+            <Typography variant="body" style={styles.emptyText}>No prescriptions found</Typography>
+            <Button
+              title="Write Prescription"
+              onPress={() => setShowCreateModal(true)}
+              containerStyle={styles.emptyButton}
+            />
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Create Prescription Modal */}
+      <Modal
+        visible={showCreateModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Typography variant="h4" weight="bold">Write Prescription</Typography>
+            <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+              <Icon name="close" type="material" size={28} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            {/* Patient Selection */}
+            {!route?.params?.patientId && (
+              <>
+                <Typography variant="body" style={styles.inputLabel}>Patient *</Typography>
+                <View style={styles.pickerContainer}>
+                  <Picker
+                    selectedValue={newPrescription.patientId}
+                    onValueChange={(value) => setNewPrescription({ ...newPrescription, patientId: value })}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select a patient" value="" />
+                    {patients.map((patient) => (
+                      <Picker.Item
+                        key={patient.id}
+                        label={`${patient.firstName} ${patient.lastName}`}
+                        value={patient.id}
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </>
+            )}
+
+            {/* Medication */}
+            <Input
+              label="Medication *"
+              value={newPrescription.medication}
+              onChangeText={(text) => setNewPrescription({ ...newPrescription, medication: text })}
+              placeholder="e.g., Lisinopril"
+              leftIcon={<Icon name="medication" type="material" size={20} />}
+            />
+
+            {/* Dosage */}
+            <Input
+              label="Dosage *"
+              value={newPrescription.dosage}
+              onChangeText={(text) => setNewPrescription({ ...newPrescription, dosage: text })}
+              placeholder="e.g., 10mg"
+            />
+
+            {/* Frequency */}
+            <Input
+              label="Frequency *"
+              value={newPrescription.frequency}
+              onChangeText={(text) => setNewPrescription({ ...newPrescription, frequency: text })}
+              placeholder="e.g., Once daily"
+            />
+
+            {/* Route */}
+            <Typography variant="body" style={styles.inputLabel}>Route of Administration</Typography>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={newPrescription.route}
+                onValueChange={(value) => setNewPrescription({ ...newPrescription, route: value as any })}
+                style={styles.picker}
+              >
+                <Picker.Item label="Oral" value="oral" />
+                <Picker.Item label="Topical" value="topical" />
+                <Picker.Item label="Injection" value="injection" />
+                <Picker.Item label="Inhalation" value="inhalation" />
+                <Picker.Item label="Other" value="other" />
+              </Picker>
+            </View>
+
+            {/* Duration */}
+            <Input
+              label="Duration"
+              value={newPrescription.duration}
+              onChangeText={(text) => setNewPrescription({ ...newPrescription, duration: text })}
+              placeholder="e.g., 30 days"
+            />
+
+            {/* Quantity */}
+            <Input
+              label="Quantity"
+              value={newPrescription.quantity.toString()}
+              onChangeText={(text) =>
+                setNewPrescription({ ...newPrescription, quantity: parseInt(text) || 0 })
+              }
+              keyboardType="numeric"
+              placeholder="e.g., 30"
+            />
+
+            {/* Refills */}
+            <Input
+              label="Refills"
+              value={newPrescription.refills.toString()}
+              onChangeText={(text) =>
+                setNewPrescription({ ...newPrescription, refills: parseInt(text) || 0 })
+              }
+              keyboardType="numeric"
+              placeholder="e.g., 3"
+            />
+
+            {/* Start Date */}
+            <Input
+              label="Start Date"
+              value={newPrescription.startDate}
+              onChangeText={(text) => setNewPrescription({ ...newPrescription, startDate: text })}
+              placeholder="YYYY-MM-DD"
+              leftIcon={<Icon name="calendar-today" type="material" size={20} />}
+            />
+
+            {/* Instructions */}
+            <Input
+              label="Instructions"
+              value={newPrescription.instructions}
+              onChangeText={(text) => setNewPrescription({ ...newPrescription, instructions: text })}
+              placeholder="Special instructions for the patient"
+              multiline
+              numberOfLines={3}
+            />
+
+            <Button
+              title="Create Prescription"
+              onPress={handleCreatePrescription}
+              containerStyle={styles.createButton}
+              buttonStyle={{ backgroundColor: theme.colors.primary }}
+            />
+          </ScrollView>
+        </View>
+      </Modal>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+  gradientHeader: {
+    alignItems: 'center',
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+    paddingTop: 40,
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 20,
+  },
+  iconContainer: {
+    marginBottom: 15,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  filterScroll: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    marginRight: 8,
+  },
+  filterChipActive: {
+    backgroundColor: '#2196F3',
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  filterChipTextActive: {
+    color: '#FFFFFF',
+  },
+  listContainer: {
+    flex: 1,
+  },
+  prescriptionCard: {
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    padding: 16,
+  },
+  prescriptionContent: {
+    flex: 1,
+  },
+  prescriptionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  prescriptionInfo: {
+    flex: 1,
+  },
+  medicationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  medicationName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginLeft: 8,
+    flex: 1,
+  },
+  patientName: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 12,
+  },
+  prescriptionDetails: {
+    backgroundColor: '#F5F5F5',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  detailText: {
+    fontSize: 14,
+    marginBottom: 6,
+    color: '#333',
+  },
+  detailLabel: {
+    fontWeight: '600',
+    color: '#666',
+  },
+  instructionsBox: {
+    backgroundColor: '#E3F2FD',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  instructionsLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1976D2',
+    marginBottom: 4,
+  },
+  instructionsText: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
+  },
+  filledText: {
+    fontSize: 14,
+    color: '#4CAF50',
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    height: 32,
+    justifyContent: 'center',
+  },
+  statusText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginBottom: 8,
+    borderRadius: 8,
+    backgroundColor: '#F5F5F5',
+  },
+  actionButtonText: {
+    fontSize: 13,
+    marginLeft: 4,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#999',
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  emptyButton: {
+    width: 200,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  modalContent: {
+    flex: 1,
+    padding: 16,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#86939e',
+    marginLeft: 10,
+    marginBottom: 8,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#86939e',
+    borderRadius: 8,
+    marginHorizontal: 10,
+    marginBottom: 18,
+  },
+  picker: {
+    height: 50,
+  },
+  createButton: {
+    marginTop: 16,
+    marginBottom: 32,
+  },
+});
+
+export default PrescriptionManagementScreen;

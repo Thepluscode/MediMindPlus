@@ -1,0 +1,655 @@
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  Alert,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { Typography, LoadingSpinner } from '../components/ui';
+import { useNavigation } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
+import { theme } from '../theme/theme';
+import {
+  getConsent,
+  updateConsent,
+  selectConsent,
+  selectConsentIsLoading,
+  selectConsentError,
+} from '../store/slices/consentSlice';
+import type { AppDispatch } from '../store/store';
+
+interface ConsentScope {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  required: boolean;
+}
+
+const CONSENT_SCOPES: ConsentScope[] = [
+  {
+    id: 'ai_predictions',
+    title: 'AI Health Predictions',
+    description: 'Allow AI models to analyze your health data and provide risk predictions',
+    icon: 'analytics',
+    required: false,
+  },
+  {
+    id: 'data_storage',
+    title: 'Blockchain Data Storage',
+    description: 'Store your AI predictions securely on blockchain for immutability',
+    icon: 'cube',
+    required: false,
+  },
+  {
+    id: 'federated_learning',
+    title: 'Federated Learning',
+    description: 'Contribute anonymized data to improve AI models without sharing raw data',
+    icon: 'people',
+    required: false,
+  },
+  {
+    id: 'anomaly_detection',
+    title: 'IoMT Anomaly Detection',
+    description: 'Monitor your wearable devices for health anomalies in real-time',
+    icon: 'watch',
+    required: false,
+  },
+  {
+    id: 'explainability',
+    title: 'AI Explainability',
+    description: 'Generate detailed explanations for all AI-powered predictions',
+    icon: 'bulb',
+    required: true,
+  },
+];
+
+const ConsentManagementScreen: React.FC = () => {
+  const navigation = useNavigation();
+  const dispatch = useDispatch<AppDispatch>();
+
+  const consent = useSelector(selectConsent);
+  const isLoading = useSelector(selectConsentIsLoading);
+  const error = useSelector(selectConsentError);
+
+  const [consentEnabled, setConsentEnabled] = useState(false);
+  const [selectedScopes, setSelectedScopes] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    loadConsent();
+  }, []);
+
+  useEffect(() => {
+    if (consent) {
+      setConsentEnabled(consent.consent_given);
+      setSelectedScopes(consent.consent_scope || []);
+    }
+  }, [consent]);
+
+  const loadConsent = async () => {
+    try {
+      await dispatch(getConsent()).unwrap();
+    } catch (err) {
+      console.error('Error loading consent:', err);
+    }
+  };
+
+  const handleToggleScope = (scopeId: string, required: boolean) => {
+    if (required) {
+      Alert.alert(
+        'Required Consent',
+        'This consent is required for using AI features and cannot be disabled.'
+      );
+      return;
+    }
+
+    setSelectedScopes((prev) =>
+      prev.includes(scopeId)
+        ? prev.filter((id) => id !== scopeId)
+        : [...prev, scopeId]
+    );
+  };
+
+  const handleSaveConsent = async () => {
+    if (!consentEnabled) {
+      Alert.alert(
+        'Disable AI Features?',
+        'Disabling consent will prevent you from using AI-powered health predictions. Are you sure?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Disable',
+            style: 'destructive',
+            onPress: () => saveConsent(false, []),
+          },
+        ]
+      );
+      return;
+    }
+
+    if (selectedScopes.length === 0) {
+      Alert.alert(
+        'No Permissions Selected',
+        'Please select at least one permission to enable AI features.'
+      );
+      return;
+    }
+
+    await saveConsent(consentEnabled, selectedScopes);
+  };
+
+  const saveConsent = async (enabled: boolean, scopes: string[]) => {
+    setSaving(true);
+    try {
+      await dispatch(updateConsent({
+        consentGiven: enabled,
+        consentScope: scopes,
+      })).unwrap();
+
+      Alert.alert(
+        'Success',
+        'Your consent preferences have been saved and recorded on the blockchain.'
+      );
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to save consent');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <LinearGradient
+        colors={theme.gradients.primary.colors}
+        style={styles.header}
+        start={theme.gradients.primary.start}
+        end={theme.gradients.primary.end}
+      >
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>Privacy Consent</Typography>
+            <Text style={styles.headerSubtitle}>
+              Control Your AI Data Permissions
+            </Typography>
+          </View>
+        </View>
+      </LinearGradient>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Master Consent Toggle */}
+        <View style={styles.masterConsentCard}>
+          <View style={styles.masterConsentContent}>
+            <View style={styles.masterConsentIcon}>
+              <Ionicons name="shield-checkmark" size={32} color="#667eea" />
+            </View>
+            <View style={styles.masterConsentText}>
+              <Text style={styles.masterConsentTitle}>
+                Enable AI-Powered Features
+              </Typography>
+              <Text style={styles.masterConsentDescription}>
+                Grant permission to use advanced AI health predictions
+              </Typography>
+            </View>
+            <Switch
+              value={consentEnabled}
+              onValueChange={setConsentEnabled}
+              trackColor={{ false: '#cbd5e1', true: '#667eea' }}
+              thumbColor={consentEnabled ? '#fff' : '#f8fafc'}
+            />
+          </View>
+
+          {consent?.blockchain_hash && (
+            <View style={styles.blockchainBadge}>
+              <Ionicons name="cube" size={16} color="#10b981" />
+              <Text style={styles.blockchainText}>
+                Recorded on Blockchain
+              </Typography>
+            </View>
+          )}
+        </View>
+
+        {/* Info Card */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoHeader}>
+            <Ionicons name="information-circle" size={24} color="#3b82f6" />
+            <Text style={styles.infoTitle}>Why We Need Your Consent</Typography>
+          </View>
+          <Text style={styles.infoText}>
+            We respect your privacy. Your consent choices are permanently recorded on blockchain
+            for transparency and can be changed at any time. All AI predictions use privacy-preserving
+            techniques and your data remains secure.
+          </Typography>
+        </View>
+
+        {/* Consent Scopes */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Permission Details</Typography>
+          <Text style={styles.sectionDescription}>
+            Choose which AI features you want to enable
+          </Typography>
+
+          {CONSENT_SCOPES.map((scope) => {
+            const isEnabled = selectedScopes.includes(scope.id);
+
+            return (
+              <TouchableOpacity
+                key={scope.id}
+                style={[
+                  styles.scopeCard,
+                  !consentEnabled && styles.scopeCardDisabled,
+                ]}
+                onPress={() => handleToggleScope(scope.id, scope.required)}
+                disabled={!consentEnabled}
+                activeOpacity={0.7}
+              >
+                <View style={styles.scopeHeader}>
+                  <View
+                    style={[
+                      styles.scopeIconContainer,
+                      isEnabled && styles.scopeIconContainerActive,
+                    ]}
+                  >
+                    <Ionicons
+                      name={scope.icon as any}
+                      size={24}
+                      color={isEnabled ? '#667eea' : '#94a3b8'}
+                    />
+                  </View>
+                  <View style={styles.scopeContent}>
+                    <View style={styles.scopeTitleRow}>
+                      <Text style={styles.scopeTitle}>{scope.title}</Typography>
+                      {scope.required && (
+                        <View style={styles.requiredBadge}>
+                          <Text style={styles.requiredText}>Required</Typography>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.scopeDescription}>
+                      {scope.description}
+                    </Typography>
+                  </View>
+                  <Switch
+                    value={scope.required || isEnabled}
+                    onValueChange={() => handleToggleScope(scope.id, scope.required)}
+                    disabled={!consentEnabled || scope.required}
+                    trackColor={{ false: '#cbd5e1', true: '#667eea' }}
+                    thumbColor={isEnabled ? '#fff' : '#f8fafc'}
+                  />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Consent History */}
+        {consent && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Consent History</Typography>
+
+            <View style={styles.historyCard}>
+              <View style={styles.historyRow}>
+                <Ionicons name="time" size={20} color="#64748b" />
+                <View style={styles.historyContent}>
+                  <Text style={styles.historyLabel}>Last Updated</Typography>
+                  <Text style={styles.historyValue}>
+                    {consent.given_at
+                      ? new Date(consent.given_at).toLocaleString()
+                      : 'Never'}
+                  </Typography>
+                </View>
+              </View>
+
+              {consent.blockchain_hash && (
+                <View style={styles.historyRow}>
+                  <Ionicons name="cube" size={20} color="#64748b" />
+                  <View style={styles.historyContent}>
+                    <Text style={styles.historyLabel}>Blockchain Hash</Typography>
+                    <Text
+                      style={styles.historyHash}
+                      numberOfLines={1}
+                      ellipsizeMode="middle"
+                    >
+                      {consent.blockchain_hash}
+                    </Typography>
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.historyRow}>
+                <Ionicons name="shield-checkmark" size={20} color="#64748b" />
+                <View style={styles.historyContent}>
+                  <Text style={styles.historyLabel}>Status</Typography>
+                  <Text
+                    style={[
+                      styles.historyValue,
+                      { color: consent.consent_given ? '#10b981' : '#ef4444' },
+                    ]}
+                  >
+                    {consent.consent_given ? 'Active' : 'Revoked'}
+                  </Typography>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {error && (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={24} color="#ef4444" />
+            <Text style={styles.errorText}>{error}</Typography>
+          </View>
+        )}
+
+        {/* Save Button */}
+        <TouchableOpacity
+          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+          onPress={handleSaveConsent}
+          disabled={saving || isLoading}
+        >
+          <LinearGradient
+            colors={theme.gradients.primary.colors}
+            style={styles.saveButtonGradient}
+            start={theme.gradients.primary.start}
+            end={{ x: 1, y: 0 }}
+          >
+            {saving || isLoading ? (
+              <>
+                <ActivityIndicator size="small" color="#fff" />
+                <Text style={styles.saveButtonText}>Saving...</Typography>
+              </>
+            ) : (
+              <>
+                <Ionicons name="save" size={20} color="#fff" />
+                <Text style={styles.saveButtonText}>
+                  Save Consent Preferences
+                </Typography>
+              </>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  header: {
+    paddingTop: 60,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  headerTitleContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#e0e7ff',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  masterConsentCard: {
+    margin: 20,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  masterConsentContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  masterConsentIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#eef2ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  masterConsentText: {
+    flex: 1,
+  },
+  masterConsentTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  masterConsentDescription: {
+    fontSize: 13,
+    color: '#64748b',
+  },
+  blockchainBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
+  blockchainText: {
+    fontSize: 13,
+    color: '#10b981',
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  infoCard: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    backgroundColor: '#eff6ff',
+    borderRadius: 16,
+    padding: 16,
+  },
+  infoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1e40af',
+    marginLeft: 8,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#1e40af',
+    lineHeight: 20,
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 16,
+  },
+  scopeCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  scopeCardDisabled: {
+    opacity: 0.5,
+  },
+  scopeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  scopeIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  scopeIconContainerActive: {
+    backgroundColor: '#eef2ff',
+  },
+  scopeContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  scopeTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  scopeTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1e293b',
+    flex: 1,
+  },
+  requiredBadge: {
+    backgroundColor: '#fef3c7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  requiredText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#92400e',
+  },
+  scopeDescription: {
+    fontSize: 13,
+    color: '#64748b',
+    lineHeight: 18,
+  },
+  historyCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  historyContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  historyLabel: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginBottom: 4,
+  },
+  historyValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+  },
+  historyHash: {
+    fontSize: 12,
+    color: '#475569',
+    fontFamily: 'monospace',
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fee2e2',
+    padding: 16,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 12,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#ef4444',
+    marginLeft: 12,
+    flex: 1,
+  },
+  saveButton: {
+    marginHorizontal: 20,
+    marginBottom: 40,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
+  },
+  saveButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 18,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+    marginLeft: 8,
+  },
+});
+
+export default ConsentManagementScreen;

@@ -57,7 +57,7 @@ export default function VirtualHealthTwin() {
   const yearsDiff = twinData?.yearsDiff ?? (chronoAge - bioAge);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-24 pb-16">
@@ -70,7 +70,7 @@ export default function VirtualHealthTwin() {
                 $150M Feature
               </span>
             </div>
-            <h1 className="text-5xl lg:text-6xl font-bold text-slate-900 mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
+            <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               Virtual Health Twin
             </h1>
             <p className="text-xl text-slate-600 max-w-3xl">
@@ -100,8 +100,8 @@ export default function VirtualHealthTwin() {
           {/* Body Systems Dashboard */}
           <div className="grid lg:grid-cols-2 gap-8 mb-8">
             {/* Systems Grid */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6">Body Systems Health</h2>
+            <div className="card-gradient-border p-8">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">Body Systems Health</h2>
               <div className="space-y-4">
                 {systems.map((system, index) => (
                   <div key={index} className="group hover:bg-slate-50 rounded-xl p-4 transition-colors cursor-pointer">
@@ -116,11 +116,11 @@ export default function VirtualHealthTwin() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-slate-900">{system.score}</p>
+                        <p className="text-xl font-bold text-slate-900">{system.score}</p>
                         <p className="text-xs text-slate-500">/100</p>
                       </div>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div className="w-full bg-slate-200/60 rounded-full h-2">
                       <div 
                         className={`h-2 rounded-full bg-gradient-to-r ${system.color}`}
                         style={{ width: `${system.score}%` }}
@@ -132,8 +132,8 @@ export default function VirtualHealthTwin() {
             </div>
 
             {/* Radar Chart */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6">Health Profile Overview</h2>
+            <div className="card-gradient-border p-8">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">Health Profile Overview</h2>
               <ResponsiveContainer width="100%" height={400}>
                 <RadarChart data={radarData}>
                   <PolarGrid stroke="#e2e8f0" />
@@ -146,17 +146,17 @@ export default function VirtualHealthTwin() {
           </div>
 
           {/* Treatment Predictions */}
-          <div className="bg-white rounded-2xl p-8 shadow-lg mb-8">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Treatment Predictions</h2>
+          <div className="card-gradient-border p-8 mb-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-6">Treatment Predictions</h2>
             <div className="grid md:grid-cols-3 gap-6">
               {predictions.map((treatment, index) => (
-                <div key={index} className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer">
+                <div key={index} className="card-premium p-6 transition-shadow cursor-pointer">
                   <h3 className="font-bold text-slate-900 mb-4">{treatment.treatment}</h3>
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm text-slate-600 mb-1">Success Probability</p>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-slate-200 rounded-full h-2">
+                        <div className="flex-1 bg-slate-200/60 rounded-full h-2">
                           <div 
                             className="h-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500"
                             style={{ width: `${treatment.successRate}%` }}
@@ -180,8 +180,8 @@ export default function VirtualHealthTwin() {
           </div>
 
           {/* What-If Simulations */}
-          <div className="bg-white rounded-2xl p-8 shadow-lg">
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">What-If Simulations</h2>
+          <div className="card-gradient-border p-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-2">What-If Simulations</h2>
             <p className="text-slate-600 mb-6">Test different interventions to see their predicted impact on your health</p>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -221,7 +221,7 @@ export default function VirtualHealthTwin() {
                   </div>
                   <div className="bg-white rounded-lg p-4">
                     <p className="text-sm text-slate-600 mb-1">Implementation Time</p>
-                    <p className="text-2xl font-bold text-slate-900">6 months</p>
+                    <p className="text-xl font-bold text-slate-900">6 months</p>
                   </div>
                 </div>
               </div>

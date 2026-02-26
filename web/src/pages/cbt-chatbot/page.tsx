@@ -77,7 +77,7 @@ export default function CBTChatbot() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-24 pb-16">
@@ -90,7 +90,7 @@ export default function CBTChatbot() {
                 $80M Feature
               </span>
             </div>
-            <h1 className="text-5xl lg:text-6xl font-bold text-slate-900 mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
+            <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               CBT Therapy Chatbot
             </h1>
             <p className="text-xl text-slate-600 max-w-3xl">
@@ -102,7 +102,7 @@ export default function CBTChatbot() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Suggested Topics */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <div className="card-gradient-border p-6">
                 <h2 className="text-lg font-bold text-slate-900 mb-4">Suggested Topics</h2>
                 <div className="space-y-3">
                   {suggestedTopics.map((topic, index) => (
@@ -135,7 +135,7 @@ export default function CBTChatbot() {
               </div>
 
               {/* HIPAA Badge */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg text-center">
+              <div className="card-gradient-border p-6 text-center">
                 <i className="ri-shield-check-line text-4xl text-green-500 mb-2"></i>
                 <p className="text-sm font-semibold text-slate-900">HIPAA Compliant</p>
                 <p className="text-xs text-slate-600 mt-1">Your conversations are secure and private</p>

@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/logs/.a95d248f5705ba468b293adcfeb752e631cc23f8-audit.json",
+    "files": [
+        {
+            "date": 1771992819347,
+            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/logs/rejections-2026-02-25.log",
+            "hash": "ac116a30014a1277d01ed0a0a7fab5ff109f29906c81085200ddc69fc0f7a354"
+        }
+    ],
+    "hashType": "sha256"
+}

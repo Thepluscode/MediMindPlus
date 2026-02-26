@@ -118,7 +118,7 @@ export default function DrugInteraction() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-24 pb-16">
@@ -131,7 +131,7 @@ export default function DrugInteraction() {
                 $75M Feature
               </span>
             </div>
-            <h1 className="text-5xl lg:text-6xl font-bold text-slate-900 mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
+            <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               Drug Interaction Checker
             </h1>
             <p className="text-xl text-slate-600 max-w-3xl">
@@ -143,7 +143,7 @@ export default function DrugInteraction() {
             {/* Input Section */}
             <div className="space-y-6">
               {/* Medications */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <div className="card-gradient-border p-6">
                 <h2 className="text-xl font-bold text-slate-900 mb-4">Current Medications</h2>
                 <div className="space-y-3 mb-4">
                   <input
@@ -186,7 +186,7 @@ export default function DrugInteraction() {
               </div>
 
               {/* Allergies */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <div className="card-gradient-border p-6">
                 <h2 className="text-xl font-bold text-slate-900 mb-4">Known Allergies</h2>
                 <div className="flex gap-2 mb-4">
                   <input
@@ -213,7 +213,7 @@ export default function DrugInteraction() {
               </div>
 
               {/* Medical Conditions */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <div className="card-gradient-border p-6">
                 <h2 className="text-xl font-bold text-slate-900 mb-4">Medical Conditions</h2>
                 <div className="flex gap-2 mb-4">
                   <input
@@ -240,7 +240,7 @@ export default function DrugInteraction() {
               </div>
 
               {/* Special Populations */}
-              <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <div className="card-gradient-border p-6">
                 <h2 className="text-xl font-bold text-slate-900 mb-4">Special Populations</h2>
                 <div className="space-y-3">
                   <label className="flex items-center gap-3 cursor-pointer">
@@ -294,7 +294,7 @@ export default function DrugInteraction() {
 
                   {/* Interactions */}
                   {interactions.map((interaction, index) => (
-                    <div key={index} className="bg-white rounded-2xl p-6 shadow-lg">
+                    <div key={index} className="card-gradient-border p-6">
                       <div className="flex items-start gap-4 mb-4">
                         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getSeverityColor(interaction.severity)} flex items-center justify-center flex-shrink-0`}>
                           <i className={`${getSeverityIcon(interaction.severity)} text-white text-xl`}></i>
@@ -319,7 +319,7 @@ export default function DrugInteraction() {
                   ))}
 
                   {/* Safety Information */}
-                  <div className="bg-white rounded-2xl p-6 shadow-lg">
+                  <div className="card-gradient-border p-6">
                     <h3 className="font-bold text-slate-900 mb-4">Additional Safety Information</h3>
                     <div className="space-y-3">
                       <div className="flex items-start gap-3">

@@ -1,0 +1,575 @@
+import React, { useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+  Animated,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { useDispatch } from 'react-redux';
+import { verifyPrediction } from '../store/slices/aiPredictionsSlice';
+import type { AppDispatch } from '../store/store';
+import { Typography } from '../components/ui';
+import { theme } from '../theme/theme';
+
+const { width } = Dimensions.get('window');
+
+interface RouteParams {
+  prediction: any;
+}
+
+const ExplainabilityVisualizationScreen: React.FC = () => {
+  const route = useRoute();
+  const navigation = useNavigation();
+  const dispatch = useDispatch<AppDispatch>();
+
+  const { prediction } = (route.params as RouteParams) || {};
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(prediction?.verifiable || false);
+
+  if (!prediction) {
+    return (
+      <View style={styles.container}>
+        <Text>No prediction data available</Typography>
+      </View>
+    );
+  }
+
+  const features = prediction.explanation?.features || [];
+  const reasoning = prediction.explanation?.reasoning || '';
+
+  const handleVerify = async () => {
+    setVerifying(true);
+    try {
+      await dispatch(verifyPrediction(prediction.predictionId)).unwrap();
+      setVerified(true);
+    } catch (error) {
+      // Verification failed - silently handle
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const getFeatureIcon = (featureName: string) => {
+    const name = featureName.toLowerCase();
+    if (name.includes('age')) return 'calendar';
+    if (name.includes('bmi') || name.includes('weight')) return 'fitness';
+    if (name.includes('pressure') || name.includes('blood')) return 'water';
+    if (name.includes('glucose') || name.includes('sugar')) return 'nutrition';
+    if (name.includes('cholesterol')) return 'heart';
+    if (name.includes('family') || name.includes('history')) return 'people';
+    return 'analytics';
+  };
+
+  const getImportanceColor = (importance: number) => {
+    if (importance >= 0.3) return '#ef4444';
+    if (importance >= 0.2) return '#f59e0b';
+    if (importance >= 0.1) return '#eab308';
+    return '#10b981';
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <LinearGradient
+        colors={theme.gradients.primary.colors}
+        style={styles.header}
+        start={theme.gradients.primary.start}
+        end={theme.gradients.primary.end}
+      >
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>AI Explanation</Typography>
+            <Text style={styles.headerSubtitle}>
+              Understanding Your Results
+            </Typography>
+          </View>
+        </View>
+      </LinearGradient>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Prediction Summary Card */}
+        <View style={styles.summaryCard}>
+          <LinearGradient
+            colors={theme.gradients.primary.colors}
+            style={styles.summaryGradient}
+            start={theme.gradients.primary.start}
+            end={theme.gradients.primary.end}
+          >
+            <View style={styles.summaryHeader}>
+              <Ionicons name="shield-checkmark" size={32} color="#fff" />
+              <Text style={styles.summaryTitle}>Prediction Result</Typography>
+            </View>
+
+            <View style={styles.confidenceCircle}>
+              <Text style={styles.confidenceValue}>
+                {(prediction.confidence * 100).toFixed(0)}%
+              </Typography>
+              <Text style={styles.confidenceLabel}>Confidence</Typography>
+            </View>
+
+            <Text style={styles.modelName}>
+              Model: {prediction.modelName.replace(/_/g, ' ')}
+            </Typography>
+          </LinearGradient>
+        </View>
+
+        {/* Blockchain Verification */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="cube" size={24} color="#667eea" />
+            <Text style={styles.sectionTitle}>Blockchain Verification</Typography>
+          </View>
+
+          <View style={styles.verificationCard}>
+            <View style={styles.hashContainer}>
+              <Text style={styles.hashLabel}>Transaction Hash:</Typography>
+              <Text style={styles.hashValue} numberOfLines={1} ellipsizeMode="middle">
+                {prediction.blockchainHash}
+              </Typography>
+            </View>
+
+            {!verified ? (
+              <TouchableOpacity
+                style={[styles.verifyButton, verifying && styles.verifyButtonDisabled]}
+                onPress={handleVerify}
+                disabled={verifying}
+              >
+                <LinearGradient
+                  colors={theme.gradients.primary.colors}
+                  style={styles.verifyButtonGradient}
+                  start={theme.gradients.primary.start}
+                  end={{ x: 1, y: 0 }}
+                >
+                  {verifying ? (
+                    <Text style={styles.verifyButtonText}>Verifying...</Typography>
+                  ) : (
+                    <>
+                      <Ionicons name="shield-checkmark" size={20} color="#fff" />
+                      <Text style={styles.verifyButtonText}>Verify on Blockchain</Typography>
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+                <Text style={styles.verifiedText}>Verified on Blockchain</Typography>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* AI Reasoning */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="bulb" size={24} color="#667eea" />
+            <Text style={styles.sectionTitle}>AI Reasoning</Typography>
+          </View>
+
+          <View style={styles.reasoningCard}>
+            <Text style={styles.reasoningText}>{reasoning}</Typography>
+          </View>
+        </View>
+
+        {/* Feature Importance */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="bar-chart" size={24} color="#667eea" />
+            <Text style={styles.sectionTitle}>Feature Importance</Typography>
+          </View>
+
+          <View style={styles.featuresContainer}>
+            {features.map((feature: any, index: number) => {
+              const importanceColor = getImportanceColor(feature.importance);
+              const barWidth = feature.importance * width * 0.5;
+
+              return (
+                <View key={index} style={styles.featureCard}>
+                  <View style={styles.featureHeader}>
+                    <View style={styles.featureIconContainer}>
+                      <Ionicons
+                        name={getFeatureIcon(feature.name) as any}
+                        size={24}
+                        color={importanceColor}
+                      />
+                    </View>
+                    <View style={styles.featureInfo}>
+                      <Text style={styles.featureName}>
+                        {feature.name.replace(/_/g, ' ')}
+                      </Typography>
+                      <Text style={styles.featureValue}>
+                        Value: {typeof feature.value === 'boolean'
+                          ? feature.value ? 'Yes' : 'No'
+                          : feature.value}
+                      </Typography>
+                    </View>
+                    <View style={styles.importanceContainer}>
+                      <Text style={[styles.importanceValue, { color: importanceColor }]}>
+                        {(feature.importance * 100).toFixed(0)}%
+                      </Typography>
+                    </View>
+                  </View>
+
+                  {/* Importance Bar */}
+                  <View style={styles.barContainer}>
+                    <View style={styles.barBackground}>
+                      <Animated.View
+                        style={[
+                          styles.bar,
+                          {
+                            width: barWidth,
+                            backgroundColor: importanceColor,
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Contribution Info */}
+                  <View style={styles.contributionContainer}>
+                    <Text style={styles.contributionLabel}>
+                      Impact: {(feature.contribution * 100).toFixed(1)}%
+                    </Typography>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Prediction Details */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="information-circle" size={24} color="#667eea" />
+            <Text style={styles.sectionTitle}>Prediction Details</Typography>
+          </View>
+
+          <View style={styles.detailsCard}>
+            {Object.entries(prediction.prediction || {}).map(([key, value]: [string, any]) => (
+              <View key={key} style={styles.detailRow}>
+                <Text style={styles.detailKey}>
+                  {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:
+                </Typography>
+                <Text style={styles.detailValue}>
+                  {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                </Typography>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Timestamp */}
+        <View style={styles.timestampContainer}>
+          <Ionicons name="time" size={16} color="#94a3b8" />
+          <Text style={styles.timestampText}>
+            Generated: {new Date(prediction.timestamp).toLocaleString()}
+          </Typography>
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  header: {
+    paddingTop: 60,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  headerTitleContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#e0e7ff',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  summaryCard: {
+    margin: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  summaryGradient: {
+    padding: 24,
+  },
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  summaryTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    marginLeft: 12,
+  },
+  confidenceCircle: {
+    alignSelf: 'center',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  confidenceValue: {
+    fontSize: 42,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  confidenceLabel: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 4,
+  },
+  modelName: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    textTransform: 'capitalize',
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginLeft: 8,
+  },
+  verificationCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  hashContainer: {
+    marginBottom: 16,
+  },
+  hashLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    marginBottom: 6,
+    fontWeight: '600',
+  },
+  hashValue: {
+    fontSize: 12,
+    color: '#1e293b',
+    fontFamily: 'monospace',
+    backgroundColor: '#f1f5f9',
+    padding: 12,
+    borderRadius: 8,
+  },
+  verifyButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  verifyButtonDisabled: {
+    opacity: 0.6,
+  },
+  verifyButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  verifyButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+    marginLeft: 8,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#d1fae5',
+    padding: 16,
+    borderRadius: 12,
+  },
+  verifiedText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#10b981',
+    marginLeft: 8,
+  },
+  reasoningCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  reasoningText: {
+    fontSize: 15,
+    color: '#475569',
+    lineHeight: 24,
+  },
+  featuresContainer: {
+    gap: 12,
+  },
+  featureCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  featureHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  featureIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  featureName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+    textTransform: 'capitalize',
+    marginBottom: 4,
+  },
+  featureValue: {
+    fontSize: 13,
+    color: '#64748b',
+  },
+  importanceContainer: {
+    alignItems: 'flex-end',
+  },
+  importanceValue: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  barContainer: {
+    marginBottom: 8,
+  },
+  barBackground: {
+    height: 6,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  bar: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  contributionContainer: {
+    alignItems: 'flex-end',
+  },
+  contributionLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  detailsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  detailKey: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+    flex: 1,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#1e293b',
+    fontWeight: '500',
+    flex: 1,
+    textAlign: 'right',
+  },
+  timestampContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  timestampText: {
+    fontSize: 13,
+    color: '#94a3b8',
+    marginLeft: 6,
+  },
+});
+
+export default ExplainabilityVisualizationScreen;

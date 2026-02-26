@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear MediMindPlus Storage</title>
+</head>
+<body>
+    <h1>Clearing Storage...</h1>
+    <p id="status">Please wait...</p>
+    <script>
+        // Clear all localStorage
+        localStorage.clear();
+
+        // Clear all sessionStorage
+        sessionStorage.clear();
+
+        // Clear all cookies
+        document.cookie.split(";").forEach(function(c) {
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+
+        document.getElementById('status').innerHTML =
+            '<strong style="color: green;">✅ Storage cleared!</strong><br><br>' +
+            '<a href="http://localhost:19006" style="font-size: 20px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px;">Return to App</a>';
+    </script>
+</body>
+</html>

@@ -197,14 +197,14 @@ export default function Pricing() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-24 pb-16 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-5xl lg:text-6xl font-bold text-slate-900 mb-4">
+            <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
               Choose Your Plan
             </h1>
             <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto">
@@ -244,7 +244,7 @@ export default function Pricing() {
             {plans.map((plan, index) => (
               <div
                 key={index}
-                className={`bg-white rounded-3xl shadow-xl overflow-hidden transition-all duration-300 hover:scale-105 ${
+                className={`card-gradient-border overflow-hidden transition-all duration-300 hover:scale-105 ${
                   plan.popular ? 'ring-4 ring-blue-500 relative' : ''
                 }`}
               >
@@ -327,7 +327,7 @@ export default function Pricing() {
           {/* Add-ons */}
           <div className="mb-16">
             <div className="text-center mb-8">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Premium Add-ons</h2>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Premium Add-ons</h2>
               <p className="text-xl text-slate-600">Enhance your plan with specialized features</p>
             </div>
 
@@ -335,7 +335,7 @@ export default function Pricing() {
               {addons.map((addon, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group"
+                  className="card-premium p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group"
                 >
                   <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                     <i className={`${addon.icon} text-2xl text-white`}></i>
@@ -354,11 +354,11 @@ export default function Pricing() {
           {/* Comparison Table */}
           <div className="mb-16">
             <div className="text-center mb-8">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Feature Comparison</h2>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Feature Comparison</h2>
               <p className="text-xl text-slate-600">See what's included in each plan</p>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
+            <div className="card-gradient-border overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-blue-500 to-teal-500 text-white">
@@ -427,13 +427,13 @@ export default function Pricing() {
           {/* FAQs */}
           <div className="mb-16">
             <div className="text-center mb-8">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h2>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Frequently Asked Questions</h2>
               <p className="text-xl text-slate-600">Everything you need to know about our pricing</p>
             </div>
 
             <div className="max-w-4xl mx-auto space-y-4">
               {faqs.map((faq, index) => (
-                <div key={index} className="bg-white rounded-2xl shadow-lg p-6">
+                <div key={index} className="card-premium p-6">
                   <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-3">
                     <i className="ri-question-line text-blue-500 text-xl"></i>
                     {faq.question}

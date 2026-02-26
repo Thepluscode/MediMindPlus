@@ -54,7 +54,7 @@ export default function BiologicalAge() {
   const predictedLifespan = bioAgeData?.predictedLifespan ?? 94;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-24 pb-16">
@@ -67,7 +67,7 @@ export default function BiologicalAge() {
                 $120M Feature
               </span>
             </div>
-            <h1 className="text-5xl lg:text-6xl font-bold text-slate-900 mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
+            <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight mb-4" style={{ fontFamily: 'Inter, sans-serif' }}>
               Biological Age Calculator
             </h1>
             <p className="text-xl text-slate-600 max-w-3xl">
@@ -108,8 +108,8 @@ export default function BiologicalAge() {
             </div>
 
             {/* Lifespan Prediction */}
-            <div className="bg-white rounded-2xl p-8 shadow-lg">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6">Lifespan Prediction</h2>
+            <div className="card-gradient-border p-8">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">Lifespan Prediction</h2>
               <div className="text-center mb-6">
                 <p className="text-slate-600 mb-2">Predicted Lifespan</p>
                 <p className="text-6xl font-bold text-slate-900 mb-2">{predictedLifespan}</p>
@@ -142,8 +142,8 @@ export default function BiologicalAge() {
           </div>
 
           {/* Aging Pace Chart */}
-          <div className="bg-white rounded-2xl p-8 shadow-lg mb-8">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Aging Trajectory</h2>
+          <div className="card-gradient-border p-8 mb-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-6">Aging Trajectory</h2>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={agingPaceData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -157,8 +157,8 @@ export default function BiologicalAge() {
           </div>
 
           {/* 12 Hallmarks of Aging */}
-          <div className="bg-white rounded-2xl p-8 shadow-lg mb-8">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">12 Hallmarks of Aging Assessment</h2>
+          <div className="card-gradient-border p-8 mb-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-6">12 Hallmarks of Aging Assessment</h2>
             <div className="space-y-6">
               {['Primary', 'Antagonistic', 'Integrative'].map((category) => (
                 <div key={category}>
@@ -175,7 +175,7 @@ export default function BiologicalAge() {
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
-                          <div className="flex-1 bg-slate-200 rounded-full h-2 mr-3">
+                          <div className="flex-1 bg-slate-200/60 rounded-full h-2 mr-3">
                             <div 
                               className={`h-2 rounded-full bg-gradient-to-r ${hallmark.color}`}
                               style={{ width: `${hallmark.score}%` }}
@@ -192,11 +192,11 @@ export default function BiologicalAge() {
           </div>
 
           {/* Cutting-Edge Therapies */}
-          <div className="bg-white rounded-2xl p-8 shadow-lg">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Cutting-Edge Longevity Therapies</h2>
+          <div className="card-gradient-border p-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-6">Cutting-Edge Longevity Therapies</h2>
             <div className="grid md:grid-cols-2 gap-6">
               {therapies.map((therapy, index) => (
-                <div key={index} className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 hover:shadow-lg transition-all cursor-pointer">
+                <div key={index} className="card-premium p-6 transition-all cursor-pointer">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center">
@@ -216,7 +216,7 @@ export default function BiologicalAge() {
                       <span className="text-sm text-slate-600">Effectiveness</span>
                       <span className="text-sm font-bold text-slate-900">{therapy.effectiveness}%</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div className="w-full bg-slate-200/60 rounded-full h-2">
                       <div 
                         className="h-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-500"
                         style={{ width: `${therapy.effectiveness}%` }}

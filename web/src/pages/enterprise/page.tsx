@@ -156,7 +156,7 @@ export default function Enterprise() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-24 pb-16">
@@ -223,7 +223,7 @@ export default function Enterprise() {
           {/* Features Grid */}
           <div className="mb-20">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Enterprise Features</h2>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Enterprise Features</h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
                 Built for scale, security, and seamless integration with your existing infrastructure
               </p>
@@ -247,7 +247,7 @@ export default function Enterprise() {
           {/* Pricing Plans */}
           <div id="pricing" className="mb-20">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Enterprise Pricing</h2>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Enterprise Pricing</h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
                 Flexible plans designed to scale with your organization
               </p>
@@ -256,7 +256,7 @@ export default function Enterprise() {
               {plans.map((plan) => (
                 <div
                   key={plan.id}
-                  className={`bg-white rounded-3xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 ${
+                  className={`card-gradient-border p-8 hover:shadow-2xl transition-all duration-300 ${
                     plan.popular ? 'ring-4 ring-blue-500 relative' : ''
                   }`}
                 >
@@ -268,7 +268,7 @@ export default function Enterprise() {
                     </div>
                   )}
                   <div className="text-center mb-8">
-                    <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">{plan.name}</h3>
                     <p className="text-slate-600 text-sm mb-4">{plan.description}</p>
                     <div className="text-4xl font-bold text-blue-600 mb-2">{plan.price}</div>
                     <p className="text-slate-500 text-sm">Contact sales for quote</p>
@@ -299,7 +299,7 @@ export default function Enterprise() {
           {/* Case Studies */}
           <div className="mb-20">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Success Stories</h2>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Success Stories</h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
                 Real results from organizations transforming employee health
               </p>
@@ -337,7 +337,7 @@ export default function Enterprise() {
           {/* Integrations */}
           <div className="mb-20">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Seamless Integrations</h2>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Seamless Integrations</h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
                 Connect with your existing HR, EHR, and enterprise systems
               </p>
@@ -346,7 +346,7 @@ export default function Enterprise() {
               {integrations.map((integration, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 text-center group cursor-pointer"
+                  className="card-premium p-6 hover:shadow-xl transition-all duration-300 text-center group cursor-pointer"
                 >
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                     <i className={`${integration.icon} text-3xl text-white`}></i>

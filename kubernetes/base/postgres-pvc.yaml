@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: medimindplus
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi  # Adjust based on needs
+  storageClassName: fast-ssd  # Use your cluster's storage class
+  # For AWS EKS: gp3
+  # For GKE: standard-rwo
+  # For Azure AKS: managed-premium

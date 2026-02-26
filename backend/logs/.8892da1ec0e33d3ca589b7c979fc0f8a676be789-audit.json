@@ -6,59 +6,14 @@
     "auditLog": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/.8892da1ec0e33d3ca589b7c979fc0f8a676be789-audit.json",
     "files": [
         {
-            "date": 1762423116840,
-            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2025-11-06.log",
-            "hash": "1b9380549f55189168e4fc66315a73ed715363dbdbc1ed9fdc7b159a5aa3ccbc"
+            "date": 1771994229741,
+            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2026-02-25.log",
+            "hash": "322dddf489d3d0c846216f7b0472715320f1774e574ab1158bfe8de52caf4496"
         },
         {
-            "date": 1762506736039,
-            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2025-11-07.log",
-            "hash": "c626e18cbc5da154eb843b92cf550ae010494a50d5b3295cfd209fa55bfc9c23"
-        },
-        {
-            "date": 1762622910334,
-            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2025-11-08.log",
-            "hash": "039bdcab124dc05c3ca94e5a7887069e91360c6609671a45061ce6048045f2b2"
-        },
-        {
-            "date": 1762815534570,
-            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2025-11-10.log",
-            "hash": "1dce0018c889bfdbfb46418f8e7e699ee946b1759e8f3b371ec1bd96fce35dbe"
-        },
-        {
-            "date": 1762835985849,
-            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2025-11-11.log",
-            "hash": "c52ea6ddb95fa263cc5ce599b46c2a734b20169fbc149a981d5b58d0264272ec"
-        },
-        {
-            "date": 1762998378231,
-            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2025-11-13.log",
-            "hash": "46726aee387dbe4646c4590ad7391dd95dfac458b1f904b35268b61436e1934e"
-        },
-        {
-            "date": 1763078984062,
-            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2025-11-14.log",
-            "hash": "1757e2176388501ece0c01a5fd2a98b51b54813891d73bc47133d7b5a0c2b28a"
-        },
-        {
-            "date": 1763164982401,
-            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2025-11-15.log",
-            "hash": "f1a1fdab54e5b219e3bb5bc69e2b66c8daa671d4f92dc616b7476df2794763fb"
-        },
-        {
-            "date": 1763252052766,
-            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2025-11-16.log",
-            "hash": "899bdc633e5e9d4a9215bef41bc92c655c7e821efec9c13b61271135d8411279"
-        },
-        {
-            "date": 1763371869362,
-            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2025-11-17.log",
-            "hash": "c1b164c9d88c7f50ab45f6ec840befd8c3ea16d597606f171a71fd8fd2a08590"
-        },
-        {
-            "date": 1763424680112,
-            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2025-11-18.log",
-            "hash": "8c836bb5ef663ab897c64c8e39c5a537abdc14400393acfc18e61d57fb35df6b"
+            "date": 1772092861015,
+            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/error-2026-02-26.log",
+            "hash": "46819688fb52efdc777a2fd5cb4d67c8dc36b560a49d7a6c8f2c219604755b32"
         }
     ],
     "hashType": "sha256"

@@ -1,0 +1,394 @@
+/**
+ * 988 Crisis Intervention Screen
+ * Revenue Impact: +$20K implementation cost
+ */
+
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { Typography } from '../components/ui';
+import { theme } from '../theme/theme';
+
+export default function CrisisInterventionScreen({ navigation }: any) {
+  const [safetyPlan, setSafetyPlan] = useState<any>(null);
+  const [localResources, setLocalResources] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadSafetyPlan();
+    loadLocalResources();
+  }, []);
+
+  const loadSafetyPlan = async () => {
+    // Mock safety plan
+    setSafetyPlan({
+      warningSigns: ['Feeling hopeless', 'Withdrawing from others', 'Increased substance use'],
+      copingStrategies: ['Deep breathing', 'Go for a walk', 'Listen to music'],
+      supportContacts: [
+        { name: 'John Doe', relationship: 'Brother', phone: '555-0123' },
+        { name: 'Dr. Smith', relationship: 'Therapist', phone: '555-0456' }
+      ]
+    });
+  };
+
+  const loadLocalResources = async () => {
+    // Mock local resources
+    setLocalResources([
+      { name: 'City Mental Health Crisis Center', phone: '555-CRISIS', distance: 2.3 },
+      { name: 'General Hospital Psychiatric Emergency', phone: '555-PSYCH', distance: 5.7 }
+    ]);
+  };
+
+  const call988 = () => {
+    Alert.alert(
+      '988 Suicide & Crisis Lifeline',
+      'You will be connected to trained crisis counselors 24/7. Do you want to call now?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Call Now',
+          onPress: () => {
+            if (Platform.OS === 'web') {
+              window.open('tel:988', '_self');
+            } else {
+              Linking.openURL('tel:988');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const text988 = () => {
+    Alert.alert(
+      'Text 988',
+      'You can text 988 to connect with a crisis counselor. Do you want to open your messaging app?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Text Now',
+          onPress: () => {
+            if (Platform.OS === 'web') {
+              Alert.alert('SMS Support', 'Please use your phone to text 988');
+            } else {
+              Linking.openURL('sms:988&body=CRISIS');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const openCrisisChat = () => {
+    Linking.openURL('https://988lifeline.org/chat');
+  };
+
+  const callEmergency = () => {
+    Alert.alert(
+      'Call 911',
+      'This will connect you to emergency services. Use this if you are in immediate danger.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Call 911',
+          style: 'destructive',
+          onPress: () => {
+            if (Platform.OS === 'web') {
+              window.open('tel:911', '_self');
+            } else {
+              Linking.openURL('tel:911');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const callContact = (name: string, phone: string) => {
+    Alert.alert(
+      `Call ${name}`,
+      'Connect with your support person?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Call',
+          onPress: () => {
+            if (Platform.OS === 'web') {
+              window.open(`tel:${phone}`, '_self');
+            } else {
+              Linking.openURL(`tel:${phone}`);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const callLocalResource = (name: string, phone: string) => {
+    if (Platform.OS === 'web') {
+      window.open(`tel:${phone}`, '_self');
+    } else {
+      Linking.openURL(`tel:${phone}`);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient colors={theme.gradients.primary.colors} style={styles.header}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Typography variant="body" style={styles.headerTitle}>Crisis Support</Typography>
+          <View style={{ width: 24 }} />
+        </View>
+      </LinearGradient>
+
+      <ScrollView style={styles.content}>
+        {/* Emergency Actions */}
+        <View style={styles.section}>
+          <Typography variant="body" style={styles.sectionTitle}>Immediate Help</Typography>
+
+          <TouchableOpacity style={styles.emergencyButton} onPress={call988}>
+            <LinearGradient colors={theme.gradients.primary.colors} style={styles.emergencyGradient}>
+              <Ionicons name="call" size={32} color="#fff" />
+              <View style={styles.emergencyTextContainer}>
+                <Typography variant="body" style={styles.emergencyTitle}>Call 988</Typography>
+                <Typography variant="body" style={styles.emergencySubtitle}>24/7 Suicide & Crisis Lifeline</Typography>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <View style={styles.alternativeActions}>
+            <TouchableOpacity style={styles.altButton} onPress={text988}>
+              <Ionicons name="chatbubble" size={24} color="#dc2626" />
+              <Typography variant="body" style={styles.altButtonText}>Text 988</Typography>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.altButton} onPress={openCrisisChat}>
+              <Ionicons name="laptop" size={24} color="#dc2626" />
+              <Typography variant="body" style={styles.altButtonText}>Chat Online</Typography>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.altButton} onPress={callEmergency}>
+              <Ionicons name="warning" size={24} color="#dc2626" />
+              <Typography variant="body" style={styles.altButtonText}>Call 911</Typography>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Other National Resources */}
+        <View style={styles.section}>
+          <Typography variant="body" style={styles.sectionTitle}>Other Resources</Typography>
+
+          <View style={styles.resourceCard}>
+            <Ionicons name="heart" size={24} color="#8b5cf6" />
+            <View style={styles.resourceInfo}>
+              <Typography variant="body" style={styles.resourceName}>Trevor Project (LGBTQ Youth)</Typography>
+              <Typography variant="body" style={styles.resourcePhone}>1-866-488-7386 | Text: 678678</Typography>
+            </View>
+          </View>
+
+          <View style={styles.resourceCard}>
+            <Ionicons name="shield" size={24} color="#3b82f6" />
+            <View style={styles.resourceInfo}>
+              <Typography variant="body" style={styles.resourceName}>Veterans Crisis Line</Typography>
+              <Typography variant="body" style={styles.resourcePhone}>Press 1 after dialing 988</Typography>
+            </View>
+          </View>
+
+          <View style={styles.resourceCard}>
+            <Ionicons name="people" size={24} color="#10b981" />
+            <View style={styles.resourceInfo}>
+              <Typography variant="body" style={styles.resourceName}>SAMHSA Helpline</Typography>
+              <Typography variant="body" style={styles.resourcePhone}>1-800-662-4357 (Substance Abuse)</Typography>
+            </View>
+          </View>
+        </View>
+
+        {/* Safety Plan */}
+        {safetyPlan && (
+          <View style={styles.section}>
+            <Typography variant="body" style={styles.sectionTitle}>Your Safety Plan</Typography>
+
+            <View style={styles.safetyCard}>
+              <Typography variant="body" style={styles.safetyCardTitle}>Warning Signs</Typography>
+              {safetyPlan.warningSigns.map((sign: string, i: number) => (
+                <Text key={i} style={styles.safetyItem}>• {sign}</Typography>
+              ))}
+            </View>
+
+            <View style={styles.safetyCard}>
+              <Typography variant="body" style={styles.safetyCardTitle}>Coping Strategies</Typography>
+              {safetyPlan.copingStrategies.map((strategy: string, i: number) => (
+                <View key={i} style={styles.copingItem}>
+                  <Ionicons name="checkmark-circle" size={18} color="#10b981" />
+                  <Typography variant="body" style={styles.copingText}>{strategy}</Typography>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.safetyCard}>
+              <Typography variant="body" style={styles.safetyCardTitle}>Support Contacts</Typography>
+              {safetyPlan.supportContacts.map((contact: any, i: number) => (
+                <TouchableOpacity
+                  key={i}
+                  style={styles.contactItem}
+                  onPress={() => callContact(contact.name, contact.phone)}
+                >
+                  <View style={styles.contactInfo}>
+                    <Typography variant="body" style={styles.contactName}>{contact.name}</Typography>
+                    <Typography variant="body" style={styles.contactRelationship}>{contact.relationship}</Typography>
+                  </View>
+                  <View style={styles.contactAction}>
+                    <Typography variant="body" style={styles.contactPhone}>{contact.phone}</Typography>
+                    <Ionicons name="call" size={20} color="#06b6d4" />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Local Resources */}
+        {localResources.length > 0 && (
+          <View style={styles.section}>
+            <Typography variant="body" style={styles.sectionTitle}>Nearby Crisis Centers</Typography>
+            {localResources.map((resource, i) => (
+              <TouchableOpacity
+                key={i}
+                style={styles.localResourceCard}
+                onPress={() => callLocalResource(resource.name, resource.phone)}
+              >
+                <Ionicons name="location" size={24} color="#06b6d4" />
+                <View style={styles.localResourceInfo}>
+                  <Typography variant="body" style={styles.localResourceName}>{resource.name}</Typography>
+                  <Typography variant="body" style={styles.localResourceDistance}>{resource.distance} miles away</Typography>
+                </View>
+                <Ionicons name="call" size={20} color="#06b6d4" />
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Important Information */}
+        <View style={styles.infoCard}>
+          <Ionicons name="information-circle" size={24} color="#3b82f6" />
+          <View style={styles.infoContent}>
+            <Typography variant="body" style={styles.infoTitle}>You Are Not Alone</Typography>
+            <Typography variant="body" style={styles.infoText}>
+              Crisis counselors are available 24/7 to provide free, confidential support.
+              All calls, texts, and chats are anonymous unless you choose to share your information.
+            </Typography>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  header: { paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20 },
+  headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#fff', flex: 1, marginLeft: 16 },
+  content: { flex: 1 },
+  section: { padding: 20 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', marginBottom: 16 },
+
+  // Emergency Button
+  emergencyButton: { borderRadius: 16, overflow: 'hidden', marginBottom: 16 },
+  emergencyGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    gap: 16
+  },
+  emergencyTextContainer: { flex: 1 },
+  emergencyTitle: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
+  emergencySubtitle: { fontSize: 14, color: '#fef2f2' },
+
+  // Alternative Actions
+  alternativeActions: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  altButton: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 2,
+    borderColor: '#dc2626'
+  },
+  altButtonText: { fontSize: 12, fontWeight: '600', color: '#dc2626', textAlign: 'center' },
+
+  // Resource Cards
+  resourceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    gap: 12
+  },
+  resourceInfo: { flex: 1 },
+  resourceName: { fontSize: 15, fontWeight: '600', color: '#1e293b', marginBottom: 4 },
+  resourcePhone: { fontSize: 13, color: '#64748b' },
+
+  // Safety Plan
+  safetyCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12
+  },
+  safetyCardTitle: { fontSize: 15, fontWeight: '600', color: '#1e293b', marginBottom: 12 },
+  safetyItem: { fontSize: 14, color: '#475569', lineHeight: 24 },
+
+  copingItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 8 },
+  copingText: { flex: 1, fontSize: 14, color: '#475569' },
+
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9'
+  },
+  contactInfo: { flex: 1 },
+  contactName: { fontSize: 15, fontWeight: '600', color: '#1e293b', marginBottom: 2 },
+  contactRelationship: { fontSize: 13, color: '#64748b' },
+  contactAction: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  contactPhone: { fontSize: 14, fontWeight: '500', color: '#06b6d4' },
+
+  // Local Resources
+  localResourceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    gap: 12
+  },
+  localResourceInfo: { flex: 1 },
+  localResourceName: { fontSize: 15, fontWeight: '600', color: '#1e293b', marginBottom: 4 },
+  localResourceDistance: { fontSize: 13, color: '#64748b' },
+
+  // Info Card
+  infoCard: {
+    flexDirection: 'row',
+    backgroundColor: '#eff6ff',
+    borderRadius: 12,
+    padding: 16,
+    margin: 20,
+    gap: 12
+  },
+  infoContent: { flex: 1 },
+  infoTitle: { fontSize: 15, fontWeight: '600', color: '#1e40af', marginBottom: 6 },
+  infoText: { fontSize: 13, color: '#1e40af', lineHeight: 20 }
+});

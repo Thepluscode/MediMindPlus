@@ -1,0 +1,57 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: medimindplus
+
+resources:
+  # Namespace
+  - namespace.yaml
+
+  # Configuration
+  - configmap.yaml
+  - secrets.yaml
+
+  # RBAC
+  - rbac.yaml
+
+  # Storage
+  - postgres-pvc.yaml
+  - redis-pvc.yaml
+
+  # Database
+  - postgres-deployment.yaml
+  - postgres-service.yaml
+
+  # Cache
+  - redis-deployment.yaml
+  - redis-service.yaml
+
+  # Application
+  - backend-deployment.yaml
+  - backend-service.yaml
+  - backend-hpa.yaml
+
+  # ML Service
+  - ml-service-deployment.yaml
+  - ml-service-service.yaml
+
+  # Load Balancer
+  - nginx-configmap.yaml
+  - nginx-deployment.yaml
+  - nginx-service.yaml
+
+  # Monitoring
+  - prometheus-config.yaml
+  - prometheus-deployment.yaml
+  - prometheus-service.yaml
+  - grafana-deployment.yaml
+  - grafana-service.yaml
+  - grafana-secrets.yaml
+
+  # Ingress
+  - ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/name: medimindplus
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/managed-by: kustomize

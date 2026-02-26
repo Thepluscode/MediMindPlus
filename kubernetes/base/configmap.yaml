@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: medimindplus-config
+  namespace: medimindplus
+data:
+  # Database Configuration
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "medimindplus"
+
+  # Redis Configuration
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+
+  # Application Configuration
+  NODE_ENV: "production"
+  API_PREFIX: "/api"
+  PORT: "3000"
+
+  # ML Service Configuration
+  ML_SERVICE_URL: "http://ml-service:8000"
+
+  # Feature Flags
+  ENABLE_VIRTUAL_HEALTH_TWIN: "true"
+  ENABLE_MENTAL_HEALTH_CRISIS: "true"
+  ENABLE_MULTI_OMICS: "true"
+  ENABLE_LONGEVITY: "true"
+  ENABLE_EMPLOYER_DASHBOARD: "true"
+  ENABLE_PROVIDER_PERFORMANCE: "true"
+  ENABLE_FEDERATED_LEARNING: "true"
+  ENABLE_PREDICTIVE_INSURANCE: "true"
+  ENABLE_DRUG_DISCOVERY: "true"
+  ENABLE_PANDEMIC_WARNING: "true"
+  ENABLE_HEALTH_EDUCATOR: "true"
+  ENABLE_DATA_MARKETPLACE: "true"
+
+  # Monitoring
+  PROMETHEUS_PORT: "9090"
+  GRAFANA_PORT: "3000"
+
+  # Sentry Configuration (DSN should be in secrets)
+  SENTRY_ENVIRONMENT: "production"
+  SENTRY_TRACES_SAMPLE_RATE: "0.1"

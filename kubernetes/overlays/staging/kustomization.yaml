@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: medimindplus-staging
+
+bases:
+  - ../../base
+
+# Staging-specific patches
+patchesStrategicMerge:
+  - backend-replicas.yaml
+
+# Staging images with specific tags
+images:
+  - name: your-docker-registry/medimindplus-backend
+    newTag: staging-latest
+  - name: your-docker-registry/medimindplus-ml
+    newTag: staging-latest
+
+commonLabels:
+  environment: staging
+
+configMapGenerator:
+  - name: medimindplus-config
+    behavior: merge
+    literals:
+      - NODE_ENV=staging
+      - LOG_LEVEL=debug
+
+nameSuffix: -staging

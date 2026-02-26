@@ -117,7 +117,7 @@ export default function HealthAnalytics() {
   const COLORS = ['#3b82f6', '#f59e0b', '#8b5cf6', '#14b8a6'];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-24 pb-16 px-4">
@@ -129,7 +129,7 @@ export default function HealthAnalytics() {
           </div>
 
           {/* Controls */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div className="card-premium p-6 mb-8">
             <div className="flex flex-wrap gap-4 items-center justify-between">
               {/* Time Range Selector */}
               <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ export default function HealthAnalytics() {
               { label: 'Daily Steps', value: keyMetrics.dailySteps, change: '+12.4%', icon: 'ri-walk-line', color: 'from-green-500 to-emerald-500', positive: true },
               { label: 'Stress Level', value: keyMetrics.stressLevel, change: '-8.1%', icon: 'ri-mental-health-line', color: 'from-blue-500 to-teal-500', positive: true }
             ].map((metric, index) => (
-              <div key={index} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+              <div key={index} className="card-premium p-6 hover:shadow-xl transition-all duration-300">
                 <div className={`w-12 h-12 bg-gradient-to-br ${metric.color} rounded-xl flex items-center justify-center mb-4`}>
                   <i className={`${metric.icon} text-2xl text-white`}></i>
                 </div>
@@ -195,9 +195,9 @@ export default function HealthAnalytics() {
           {/* Charts Grid */}
           <div className="grid lg:grid-cols-2 gap-8 mb-8">
             {/* Heart Rate Trends */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Heart Rate Trends</h2>
+                <h2 className="text-xl font-bold text-slate-900">Heart Rate Trends</h2>
                 <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
                   <i className="ri-heart-pulse-line text-xl text-white"></i>
                 </div>
@@ -219,9 +219,9 @@ export default function HealthAnalytics() {
             </div>
 
             {/* Sleep Quality */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Sleep Quality</h2>
+                <h2 className="text-xl font-bold text-slate-900">Sleep Quality</h2>
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg flex items-center justify-center">
                   <i className="ri-moon-line text-xl text-white"></i>
                 </div>
@@ -244,9 +244,9 @@ export default function HealthAnalytics() {
             </div>
 
             {/* Activity Progress */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Activity Progress</h2>
+                <h2 className="text-xl font-bold text-slate-900">Activity Progress</h2>
                 <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
                   <i className="ri-walk-line text-xl text-white"></i>
                 </div>
@@ -271,9 +271,9 @@ export default function HealthAnalytics() {
             </div>
 
             {/* Health Score Radar */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Health Score Distribution</h2>
+                <h2 className="text-xl font-bold text-slate-900">Health Score Distribution</h2>
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
                   <i className="ri-dashboard-line text-xl text-white"></i>
                 </div>
@@ -292,9 +292,9 @@ export default function HealthAnalytics() {
             </div>
 
             {/* Body Composition */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Body Composition</h2>
+                <h2 className="text-xl font-bold text-slate-900">Body Composition</h2>
                 <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
                   <i className="ri-body-scan-line text-xl text-white"></i>
                 </div>
@@ -325,9 +325,9 @@ export default function HealthAnalytics() {
             </div>
 
             {/* Blood Pressure */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Blood Pressure Trends</h2>
+                <h2 className="text-xl font-bold text-slate-900">Blood Pressure Trends</h2>
                 <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg flex items-center justify-center">
                   <i className="ri-heart-line text-xl text-white"></i>
                 </div>
@@ -349,9 +349,9 @@ export default function HealthAnalytics() {
           </div>
 
           {/* Stress Levels Chart */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+          <div className="card-premium p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Daily Stress Pattern</h2>
+              <h2 className="text-xl font-bold text-slate-900">Daily Stress Pattern</h2>
               <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
                 <i className="ri-mental-health-line text-xl text-white"></i>
               </div>
@@ -397,7 +397,7 @@ export default function HealthAnalytics() {
                 color: 'from-purple-500 to-pink-500'
               }
             ]).map((insight, index) => (
-              <div key={index} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+              <div key={index} className="card-premium p-6 hover:shadow-xl transition-all duration-300">
                 <div className={`w-12 h-12 bg-gradient-to-br ${insight.color} rounded-xl flex items-center justify-center mb-4`}>
                   <i className={`${insight.icon} text-2xl text-white`}></i>
                 </div>

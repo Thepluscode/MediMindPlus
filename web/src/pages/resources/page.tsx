@@ -111,7 +111,7 @@ export default function Resources() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-24 pb-16">
@@ -146,7 +146,7 @@ export default function Resources() {
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
             {stats.map((stat, index) => (
-              <div key={index} className="bg-white rounded-2xl shadow-lg p-6 text-center hover:shadow-xl transition-all duration-300">
+              <div key={index} className="card-premium p-6 text-center hover:shadow-xl transition-all duration-300">
                 <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-teal-500 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <i className={`${stat.icon} text-2xl text-white`}></i>
                 </div>

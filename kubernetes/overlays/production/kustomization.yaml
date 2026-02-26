@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: medimindplus
+
+bases:
+  - ../../base
+
+# Production-specific patches
+patchesStrategicMerge:
+  - backend-replicas.yaml
+  - resources.yaml
+
+# Production images with specific tags
+images:
+  - name: your-docker-registry/medimindplus-backend
+    newTag: v1.0.0  # Update with actual version
+  - name: your-docker-registry/medimindplus-ml
+    newTag: v1.0.0
+
+commonLabels:
+  environment: production
+
+configMapGenerator:
+  - name: medimindplus-config
+    behavior: merge
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+
+secretGenerator:
+  - name: medimindplus-secrets
+    behavior: replace
+    envs:
+      - secrets.env  # Create this file with actual production secrets

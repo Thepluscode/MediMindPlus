@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: medimindplus
+  labels:
+    app: nginx
+spec:
+  type: LoadBalancer  # Change to NodePort for non-cloud environments
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: nginx

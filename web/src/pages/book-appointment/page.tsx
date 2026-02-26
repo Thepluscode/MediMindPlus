@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Header from '../home/components/Header';
 import Footer from '../home/components/Footer';
 import { paymentService } from '../../services/payment';

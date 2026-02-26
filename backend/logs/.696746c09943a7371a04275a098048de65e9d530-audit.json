@@ -64,6 +64,16 @@
             "date": 1763424680170,
             "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/audit-2025-11-18.log",
             "hash": "3cdae7292285aa803e4c0429e24d212e6e838f08098e2343ae068350b682aa84"
+        },
+        {
+            "date": 1771994230174,
+            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/audit-2026-02-25.log",
+            "hash": "7df9d90150b8d0760829fe69819394466eb95ca232af3a7d430c5a6c79623889"
+        },
+        {
+            "date": 1772092861027,
+            "name": "/Users/theophilusogieva/Desktop/MediMindPlus/MediMindPlus/backend/logs/audit-2026-02-26.log",
+            "hash": "938c7f19884f686f697dc6dbf4b78080ce400e4fbbe2a44c12905f4ee14eca7c"
         }
     ],
     "hashType": "sha256"

@@ -175,7 +175,7 @@ export default function DeviceIntegrationPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-20">
@@ -202,7 +202,7 @@ export default function DeviceIntegrationPage() {
               {healthData.map((data, index) => (
                 <div 
                   key={index} 
-                  className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 animate-scale-in cursor-pointer"
+                  className="card-premium p-6 border border-gray-100 hover:shadow-md transition-all duration-300 animate-scale-in cursor-pointer"
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <div className={`w-12 h-12 flex items-center justify-center ${data.bgColor} rounded-lg mb-4`}>
@@ -236,7 +236,7 @@ export default function DeviceIntegrationPage() {
                 {connectedDevices.map((device, index) => (
                   <div 
                     key={device.id} 
-                    className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 animate-fade-in-left"
+                    className="card-premium p-6 border border-gray-100 hover:shadow-md transition-all duration-300 animate-fade-in-left"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -290,7 +290,7 @@ export default function DeviceIntegrationPage() {
                 .map((device, index) => (
                   <div 
                     key={device.id} 
-                    className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-teal-200 transition-all duration-300 text-center animate-scale-in cursor-pointer"
+                    className="card-premium p-6 border border-gray-100 hover:shadow-md hover:border-teal-200 transition-all duration-300 text-center animate-scale-in cursor-pointer"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className={`w-16 h-16 flex items-center justify-center ${device.bgColor} rounded-xl mx-auto mb-4`}>

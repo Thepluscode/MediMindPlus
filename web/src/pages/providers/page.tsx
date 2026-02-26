@@ -162,7 +162,7 @@ export default function Providers() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-24 pb-16">
@@ -232,7 +232,7 @@ export default function Providers() {
           {/* Features Grid */}
           <div className="mb-20">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Clinical Features Built for Providers</h2>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Clinical Features Built for Providers</h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
                 Everything you need to deliver exceptional patient care with AI assistance
               </p>
@@ -256,7 +256,7 @@ export default function Providers() {
           {/* Tools Showcase */}
           <div className="mb-20">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Powerful Clinical Tools</h2>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Powerful Clinical Tools</h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
                 Advanced AI capabilities that enhance your clinical decision-making
               </p>
@@ -265,7 +265,7 @@ export default function Providers() {
               {tools.map((tool, index) => (
                 <div
                   key={index}
-                  className={`bg-white rounded-3xl shadow-xl overflow-hidden grid lg:grid-cols-2 gap-8 items-center ${
+                  className={`card-gradient-border overflow-hidden grid lg:grid-cols-2 gap-8 items-center ${
                     index % 2 === 1 ? 'lg:grid-flow-dense' : ''
                   }`}
                 >
@@ -295,7 +295,7 @@ export default function Providers() {
           {/* Testimonials */}
           <div className="mb-20">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Trusted by Leading Physicians</h2>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Trusted by Leading Physicians</h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
                 Hear from healthcare providers transforming their practice with AI
               </p>
@@ -333,7 +333,7 @@ export default function Providers() {
           {/* Pricing */}
           <div id="pricing" className="mb-20">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-slate-900 mb-4">Provider Pricing</h2>
+              <h2 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Provider Pricing</h2>
               <p className="text-xl text-slate-600 max-w-3xl mx-auto">
                 Flexible plans for practices of all sizes
               </p>
@@ -342,7 +342,7 @@ export default function Providers() {
               {pricing.map((plan, index) => (
                 <div
                   key={index}
-                  className={`bg-white rounded-3xl shadow-lg p-8 hover:shadow-2xl transition-all duration-300 ${
+                  className={`card-gradient-border p-8 hover:shadow-2xl transition-all duration-300 ${
                     plan.popular ? 'ring-4 ring-blue-500 relative' : ''
                   }`}
                 >
@@ -354,7 +354,7 @@ export default function Providers() {
                     </div>
                   )}
                   <div className="text-center mb-8">
-                    <h3 className="text-2xl font-bold text-slate-900 mb-2">{plan.name}</h3>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">{plan.name}</h3>
                     <p className="text-slate-600 text-sm mb-4">{plan.description}</p>
                     <div className="flex items-baseline justify-center gap-1">
                       <span className="text-5xl font-bold text-blue-600">{plan.price}</span>

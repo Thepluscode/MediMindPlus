@@ -117,7 +117,7 @@ export default function HelpCenter() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-24 pb-16 px-4">
@@ -150,7 +150,7 @@ export default function HelpCenter() {
               {categories.map((category, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 group cursor-pointer"
+                  className="card-premium p-6 hover:shadow-xl transition-all duration-300 group cursor-pointer"
                 >
                   <div className={`w-14 h-14 bg-gradient-to-br ${category.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
                     <i className={`${category.icon} text-2xl text-white`}></i>
@@ -173,7 +173,7 @@ export default function HelpCenter() {
               {popularArticles.map((article, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 group cursor-pointer"
+                  className="card-premium p-6 hover:shadow-xl transition-all duration-300 group cursor-pointer"
                 >
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
@@ -204,7 +204,7 @@ export default function HelpCenter() {
           {/* FAQs */}
           <div className="mb-16">
             <h2 className="text-3xl font-bold text-slate-900 mb-8">Frequently Asked Questions</h2>
-            <div className="bg-white rounded-3xl shadow-lg p-8">
+            <div className="card-gradient-border p-8">
               <div className="space-y-4">
                 {faqs.map((faq, index) => (
                   <div

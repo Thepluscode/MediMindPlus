@@ -43,7 +43,7 @@ export default function EditProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
       
       <main className="pt-24 pb-16 px-4">
@@ -54,7 +54,7 @@ export default function EditProfile() {
               <i className="ri-arrow-left-line mr-2"></i>
               Back to Profile
             </Link>
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">Edit Profile</h1>
+            <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Edit Profile</h1>
             <p className="text-slate-600">Update your personal information and health details</p>
           </div>
 
@@ -71,8 +71,8 @@ export default function EditProfile() {
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Personal Information */}
-            <div className="bg-white rounded-3xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+            <div className="card-gradient-border p-8">
+              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg flex items-center justify-center">
                   <i className="ri-user-line text-white text-xl"></i>
                 </div>
@@ -174,8 +174,8 @@ export default function EditProfile() {
             </div>
 
             {/* Health Metrics */}
-            <div className="bg-white rounded-3xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+            <div className="card-gradient-border p-8">
+              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-green-500 rounded-lg flex items-center justify-center">
                   <i className="ri-heart-pulse-line text-white text-xl"></i>
                 </div>
@@ -212,8 +212,8 @@ export default function EditProfile() {
             </div>
 
             {/* Address Information */}
-            <div className="bg-white rounded-3xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+            <div className="card-gradient-border p-8">
+              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                   <i className="ri-map-pin-line text-white text-xl"></i>
                 </div>
@@ -276,8 +276,8 @@ export default function EditProfile() {
             </div>
 
             {/* Emergency Contact */}
-            <div className="bg-white rounded-3xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+            <div className="card-gradient-border p-8">
+              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg flex items-center justify-center">
                   <i className="ri-alarm-warning-line text-white text-xl"></i>
                 </div>

@@ -2,224 +2,230 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../home/components/Header';
 import Footer from '../home/components/Footer';
+import { authService } from '../../services/auth';
 
 export default function Profile() {
+  const currentUser = authService.getCurrentUser();
+  const fullName = currentUser
+    ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Dr. Sarah Johnson'
+    : 'Dr. Sarah Johnson';
+  const initials = currentUser
+    ? `${currentUser.firstName?.[0] || ''}${currentUser.lastName?.[0] || ''}`.toUpperCase() || 'SJ'
+    : 'SJ';
+
   const [user] = useState({
-    name: 'Dr. Sarah Johnson',
-    email: 'sarah.johnson@medimindplus.com',
+    name: fullName,
+    email: currentUser?.email || 'sarah.johnson@medimindplus.com',
     phone: '+1 (555) 123-4567',
-    dateOfBirth: '1985-03-15',
+    dateOfBirth: 'March 15, 1985',
     bloodType: 'O+',
     height: '5\'7"',
     weight: '145 lbs',
-    memberSince: 'January 2024',
+    memberSince: currentUser?.createdAt
+      ? new Date(currentUser.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      : 'January 2024',
     plan: 'Premium',
-    avatar: 'https://readdy.ai/api/search-image?query=professional%20healthcare%20provider%20portrait%20woman%20doctor%20white%20coat%20confident%20smile%20modern%20medical%20office%20background%20clean%20professional%20lighting&width=400&height=400&seq=profile-avatar-001&orientation=squarish'
   });
 
   const healthMetrics = [
-    { label: 'Biological Age', value: '32 years', status: 'excellent', icon: 'ri-heart-pulse-line' },
-    { label: 'Health Score', value: '92/100', status: 'excellent', icon: 'ri-shield-check-line' },
-    { label: 'Active Days', value: '156 days', status: 'good', icon: 'ri-run-line' },
-    { label: 'Appointments', value: '12 total', status: 'normal', icon: 'ri-calendar-check-line' }
+    { label: 'Biological Age', value: '32', unit: 'years', icon: 'ri-heart-pulse-line', gradient: 'from-rose-500 to-pink-600' },
+    { label: 'Health Score', value: '92', unit: '/100', icon: 'ri-shield-check-line', gradient: 'from-emerald-500 to-green-600' },
+    { label: 'Active Days', value: '156', unit: 'days', icon: 'ri-run-line', gradient: 'from-blue-500 to-indigo-600' },
+    { label: 'Appointments', value: '12', unit: 'total', icon: 'ri-calendar-check-line', gradient: 'from-violet-500 to-purple-600' },
   ];
 
   const quickActions = [
-    { title: 'Edit Profile', icon: 'ri-edit-line', link: '/edit-profile', color: 'from-blue-500 to-blue-600' },
-    { title: 'Medical History', icon: 'ri-file-list-3-line', link: '/medical-history', color: 'from-teal-500 to-teal-600' },
-    { title: 'Change Password', icon: 'ri-lock-password-line', link: '/change-password', color: 'from-purple-500 to-purple-600' },
-    { title: 'Privacy Settings', icon: 'ri-shield-user-line', link: '/privacy-settings', color: 'from-orange-500 to-orange-600' }
+    { title: 'Edit Profile', icon: 'ri-edit-line', link: '/edit-profile', gradient: 'from-indigo-500 to-blue-600' },
+    { title: 'Medical History', icon: 'ri-file-list-3-line', link: '/help-center', gradient: 'from-emerald-500 to-teal-600' },
+    { title: 'Change Password', icon: 'ri-lock-password-line', link: '/settings', gradient: 'from-violet-500 to-purple-600' },
+    { title: 'Privacy Settings', icon: 'ri-shield-user-line', link: '/settings', gradient: 'from-amber-500 to-orange-600' },
   ];
 
   const recentActivity = [
-    { action: 'Completed CBT Therapy Session', time: '2 hours ago', icon: 'ri-chat-smile-3-line' },
-    { action: 'Logged Health Data', time: '5 hours ago', icon: 'ri-heart-add-line' },
-    { action: 'Drug Interaction Check', time: '1 day ago', icon: 'ri-medicine-bottle-line' },
-    { action: 'Virtual Health Twin Updated', time: '2 days ago', icon: 'ri-user-heart-line' }
+    { action: 'Completed CBT Therapy Session', time: '2 hours ago', icon: 'ri-chat-smile-3-line', gradient: 'from-violet-500 to-purple-600' },
+    { action: 'Logged Health Data', time: '5 hours ago', icon: 'ri-heart-add-line', gradient: 'from-rose-500 to-pink-600' },
+    { action: 'Drug Interaction Check', time: '1 day ago', icon: 'ri-capsule-line', gradient: 'from-amber-500 to-orange-600' },
+    { action: 'Virtual Health Twin Updated', time: '2 days ago', icon: 'ri-user-heart-line', gradient: 'from-indigo-500 to-blue-600' },
+  ];
+
+  const infoFields = [
+    { label: 'Email Address', value: user.email, icon: 'ri-mail-line' },
+    { label: 'Phone Number', value: user.phone, icon: 'ri-phone-line' },
+    { label: 'Date of Birth', value: user.dateOfBirth, icon: 'ri-cake-3-line' },
+    { label: 'Blood Type', value: user.bloodType, icon: 'ri-drop-line' },
+    { label: 'Height', value: user.height, icon: 'ri-ruler-line' },
+    { label: 'Weight', value: user.weight, icon: 'ri-scales-3-line' },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-teal-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
-      
+
       <main className="pt-24 pb-16 px-4">
         <div className="max-w-7xl mx-auto">
-          {/* Profile Header */}
-          <div className="bg-white rounded-3xl shadow-xl p-8 mb-8">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-              <div className="relative">
-                <img 
-                  src={user.avatar} 
-                  alt={user.name}
-                  className="w-32 h-32 rounded-full object-cover border-4 border-blue-100"
-                />
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center border-4 border-white">
-                  <i className="ri-check-line text-white text-lg"></i>
+          {/* Profile Hero */}
+          <div className="relative overflow-hidden rounded-3xl mb-8">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-blue-600 to-teal-500 animate-gradient"></div>
+            <div className="absolute inset-0" style={{
+              backgroundImage: `radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 40%)`,
+            }}></div>
+
+            <div className="relative p-8 lg:p-10">
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+                <div className="relative">
+                  <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-2xl bg-white/20 backdrop-blur-xl flex items-center justify-center ring-2 ring-white/30">
+                    <span className="text-white font-bold text-4xl lg:text-5xl">{initials}</span>
+                  </div>
+                  <div className="absolute -bottom-2 -right-2 w-9 h-9 bg-gradient-to-br from-emerald-400 to-green-500 rounded-xl flex items-center justify-center ring-3 ring-white shadow-lg">
+                    <i className="ri-check-line text-white text-lg"></i>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex-1 text-center md:text-left">
-                <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                  <h1 className="text-3xl font-bold text-slate-900">{user.name}</h1>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-500 to-teal-500 text-white">
-                    <i className="ri-vip-crown-line mr-1"></i>
-                    {user.plan}
-                  </span>
-                </div>
-                <p className="text-slate-600 mb-4">Member since {user.memberSince}</p>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                  {healthMetrics.map((metric, index) => (
-                    <div key={index} className="text-center p-4 bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl">
-                      <div className="w-12 h-12 mx-auto mb-2 bg-white rounded-full flex items-center justify-center shadow-sm">
-                        <i className={`${metric.icon} text-2xl text-blue-600`}></i>
+
+                <div className="flex-1 text-center md:text-left">
+                  <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
+                    <h1 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight">{user.name}</h1>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm text-white ring-1 ring-white/30">
+                      <i className="ri-vip-crown-line text-amber-300"></i>
+                      {user.plan}
+                    </span>
+                  </div>
+                  <p className="text-white/60 text-sm">Member since {user.memberSince}</p>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+                    {healthMetrics.map((metric, i) => (
+                      <div key={i} className="glass-dark rounded-xl p-4 text-center animate-scale-in" style={{ animationDelay: `${i * 80}ms` }}>
+                        <div className={`w-10 h-10 mx-auto mb-2 rounded-xl bg-gradient-to-br ${metric.gradient} flex items-center justify-center`}>
+                          <i className={`${metric.icon} text-lg text-white`}></i>
+                        </div>
+                        <div className="text-xl font-extrabold text-white">
+                          {metric.value}<span className="text-xs font-medium text-white/50 ml-0.5">{metric.unit}</span>
+                        </div>
+                        <div className="text-[10px] font-medium text-white/50 uppercase tracking-wider mt-0.5">{metric.label}</div>
                       </div>
-                      <div className="text-2xl font-bold text-slate-900 mb-1">{metric.value}</div>
-                      <div className="text-xs text-slate-600">{metric.label}</div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Personal Information */}
-            <div className="lg:col-span-2 space-y-8">
-              <div className="bg-white rounded-3xl shadow-lg p-8">
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Personal Information */}
+              <div className="card-gradient-border p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-slate-900">Personal Information</h2>
-                  <Link 
+                  <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <i className="ri-user-3-line text-indigo-500"></i>
+                    Personal Information
+                  </h2>
+                  <Link
                     to="/edit-profile"
-                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 whitespace-nowrap cursor-pointer"
+                    className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl text-sm font-semibold hover:shadow-glow-indigo transition-all flex items-center gap-1.5"
                   >
-                    <i className="ri-edit-line mr-2"></i>
+                    <i className="ri-edit-line"></i>
                     Edit
                   </Link>
                 </div>
-                
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-sm font-semibold text-slate-500 mb-2 block">Email Address</label>
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
-                      <i className="ri-mail-line text-xl text-slate-400"></i>
-                      <span className="text-slate-900">{user.email}</span>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  {infoFields.map((field, i) => (
+                    <div key={i} className="group">
+                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">{field.label}</label>
+                      <div className="flex items-center gap-3 p-3.5 bg-slate-50/80 rounded-xl ring-1 ring-slate-100 group-hover:ring-indigo-200 transition-all">
+                        <i className={`${field.icon} text-lg text-slate-400`}></i>
+                        <span className="text-slate-900 font-medium text-sm">{field.value}</span>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-semibold text-slate-500 mb-2 block">Phone Number</label>
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
-                      <i className="ri-phone-line text-xl text-slate-400"></i>
-                      <span className="text-slate-900">{user.phone}</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-semibold text-slate-500 mb-2 block">Date of Birth</label>
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
-                      <i className="ri-cake-3-line text-xl text-slate-400"></i>
-                      <span className="text-slate-900">{user.dateOfBirth}</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-semibold text-slate-500 mb-2 block">Blood Type</label>
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
-                      <i className="ri-drop-line text-xl text-slate-400"></i>
-                      <span className="text-slate-900">{user.bloodType}</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-semibold text-slate-500 mb-2 block">Height</label>
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
-                      <i className="ri-ruler-line text-xl text-slate-400"></i>
-                      <span className="text-slate-900">{user.height}</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm font-semibold text-slate-500 mb-2 block">Weight</label>
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl">
-                      <i className="ri-scales-3-line text-xl text-slate-400"></i>
-                      <span className="text-slate-900">{user.weight}</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
               {/* Recent Activity */}
-              <div className="bg-white rounded-3xl shadow-lg p-8">
-                <h2 className="text-2xl font-bold text-slate-900 mb-6">Recent Activity</h2>
-                <div className="space-y-4">
-                  {recentActivity.map((activity, index) => (
-                    <div key={index} className="flex items-center gap-4 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl hover:shadow-md transition-all duration-300 cursor-pointer">
-                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm">
-                        <i className={`${activity.icon} text-xl text-blue-600`}></i>
+              <div className="card-gradient-border p-8">
+                <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                  <i className="ri-history-line text-violet-500"></i>
+                  Recent Activity
+                </h2>
+                <div className="space-y-3">
+                  {recentActivity.map((activity, i) => (
+                    <div key={i} className="card-premium p-4 flex items-center gap-4 animate-fade-in-left" style={{ animationDelay: `${i * 80}ms` }}>
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${activity.gradient} flex items-center justify-center flex-shrink-0`}>
+                        <i className={`${activity.icon} text-lg text-white`}></i>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-slate-900">{activity.action}</p>
-                        <p className="text-sm text-slate-500">{activity.time}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900 text-sm">{activity.action}</p>
+                        <p className="text-xs text-slate-400">{activity.time}</p>
                       </div>
-                      <i className="ri-arrow-right-s-line text-xl text-slate-400"></i>
+                      <i className="ri-arrow-right-s-line text-lg text-slate-300"></i>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Quick Actions Sidebar */}
+            {/* Sidebar */}
             <div className="space-y-6">
-              <div className="bg-white rounded-3xl shadow-lg p-6">
-                <h3 className="text-xl font-bold text-slate-900 mb-4">Quick Actions</h3>
-                <div className="space-y-3">
-                  {quickActions.map((action, index) => (
+              {/* Quick Actions */}
+              <div className="card-gradient-border p-6">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <i className="ri-flashlight-line text-amber-500"></i>
+                  Quick Actions
+                </h3>
+                <div className="space-y-2.5">
+                  {quickActions.map((action, i) => (
                     <Link
-                      key={index}
+                      key={i}
                       to={action.link}
-                      className="flex items-center gap-4 p-4 bg-gradient-to-r hover:shadow-lg transition-all duration-300 rounded-xl cursor-pointer group"
-                      style={{ background: `linear-gradient(135deg, ${action.color.split(' ')[0].replace('from-', '')}, ${action.color.split(' ')[1].replace('to-', '')})` }}
+                      className={`flex items-center gap-3.5 p-3.5 rounded-xl bg-gradient-to-r ${action.gradient} group hover:shadow-lg transition-all`}
                     >
-                      <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <i className={`${action.icon} text-xl text-white`}></i>
+                      <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i className={`${action.icon} text-lg text-white`}></i>
                       </div>
-                      <span className="flex-1 font-semibold text-white">{action.title}</span>
-                      <i className="ri-arrow-right-line text-white"></i>
+                      <span className="flex-1 font-semibold text-white text-sm">{action.title}</span>
+                      <i className="ri-arrow-right-line text-white/60"></i>
                     </Link>
                   ))}
                 </div>
               </div>
 
               {/* Account Status */}
-              <div className="bg-gradient-to-br from-blue-500 to-teal-500 rounded-3xl shadow-lg p-6 text-white">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                    <i className="ri-shield-check-line text-2xl"></i>
+              <div className="relative overflow-hidden rounded-[20px]">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700"></div>
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)`,
+                }}></div>
+                <div className="relative p-6 text-white">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                      <i className="ri-shield-check-line text-xl"></i>
+                    </div>
+                    <div>
+                      <h3 className="font-bold">Account Status</h3>
+                      <p className="text-xs text-white/60">All systems active</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-bold">Account Status</h3>
-                    <p className="text-sm text-blue-100">All systems active</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-3 mt-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Profile Complete</span>
-                    <span className="font-bold">100%</span>
-                  </div>
-                  <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-white rounded-full" style={{ width: '100%' }}></div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 mt-4 p-3 bg-white/10 rounded-lg">
-                    <i className="ri-checkbox-circle-line text-lg"></i>
-                    <span className="text-sm">HIPAA Compliant</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 p-3 bg-white/10 rounded-lg">
-                    <i className="ri-lock-line text-lg"></i>
-                    <span className="text-sm">End-to-End Encrypted</span>
+
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs text-white/70">Profile Complete</span>
+                        <span className="text-xs font-bold">100%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-white/15 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-emerald-400 to-green-400 rounded-full" style={{ width: '100%' }}></div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 p-2.5 bg-white/10 rounded-lg text-xs">
+                      <i className="ri-checkbox-circle-line text-emerald-400"></i>
+                      <span>HIPAA Compliant</span>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-white/10 rounded-lg text-xs">
+                      <i className="ri-lock-line text-emerald-400"></i>
+                      <span>End-to-End Encrypted</span>
+                    </div>
                   </div>
                 </div>
               </div>
