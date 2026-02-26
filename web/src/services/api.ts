@@ -44,10 +44,10 @@ export const settingsService = {
 // Wearables / Device Integration
 export const wearableService = {
   syncData: (userId: string, data: any) => api.post(`/api/wearable/${userId}/sync`, data),
-  getDevices: () => api.get('/api/advanced/wearable/devices'),
-  connectDevice: (deviceType: string) => api.post('/api/advanced/wearable/connect', { deviceType }),
-  disconnectDevice: (deviceId: string) => api.delete(`/api/advanced/wearable/${deviceId}`),
-  getBiometrics: () => api.get('/api/advanced/wearable/realtime'),
+  getDevices: () => api.get(`/api/advanced/wearables/devices/${getUserId()}`),
+  connectDevice: (deviceType: string) => api.post('/api/advanced/wearables/connect', { deviceType }),
+  disconnectDevice: (deviceId: string) => api.delete(`/api/advanced/wearables/devices/${deviceId}`),
+  getBiometrics: () => api.get(`/api/advanced/wearables/realtime/${getUserId()}`),
   getBiometricData: (metric: string, hours = 24) =>
     api.get(`/api/advanced/biometric/${metric}?hours=${hours}`),
 };
