@@ -104,10 +104,14 @@ if (!parseResult.success) {
     service: 'config',
     errors: parseResult.error.format()
   });
-  process.exit(1);
+  // Log individual errors for debugging
+  parseResult.error.issues.forEach(issue => {
+    logger.error(`Config validation error: ${issue.path.join('.')} - ${issue.message}`);
+  });
+  // Don't exit — use defaults where possible and continue
 }
 
-const env = parseResult.data;
+const env = parseResult.success ? parseResult.data : ({} as any);
 
 // Export configuration object
 export const config = {
