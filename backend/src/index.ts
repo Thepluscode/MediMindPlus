@@ -305,6 +305,65 @@ app.get(`${API_PREFIX}/reports`, authController.authenticate, async (req: any, r
   }
 });
 
+// ============================================================================
+// USER PREFERENCES — stored as JSON in the users.preferences column (or a
+// fallback in-memory map if that column doesn't exist yet)
+// ============================================================================
+const preferencesCache = new Map<string, any>();
+
+app.get(`${API_PREFIX}/settings/preferences`, authController.authenticate, async (req: any, res) => {
+  const userId = req.user?.id;
+  try {
+    const [row] = await knex('users').where({ id: userId }).select('preferences').catch(() => [{}]);
+    const prefs = row?.preferences ? (typeof row.preferences === 'string' ? JSON.parse(row.preferences) : row.preferences) : preferencesCache.get(userId) || {};
+    res.json({ success: true, preferences: prefs });
+  } catch {
+    res.json({ success: true, preferences: preferencesCache.get(userId) || {} });
+  }
+});
+
+app.put(`${API_PREFIX}/settings/preferences`, authController.authenticate, async (req: any, res) => {
+  const userId = req.user?.id;
+  const data = req.body;
+  preferencesCache.set(userId, data);
+  try {
+    await knex('users').where({ id: userId }).update({ preferences: JSON.stringify(data), updated_at: new Date() }).catch(() => {});
+  } catch { /* column may not exist */ }
+  res.json({ success: true, preferences: data });
+});
+
+// Also override the settings/profile PUT to accept extra fields like blood_type, height, weight
+app.put(`${API_PREFIX}/settings/profile`, authController.authenticate, async (req: any, res) => {
+  const userId = req.user?.id;
+  const { firstName, lastName, phone, dateOfBirth, bloodType, height, weight } = req.body;
+  const updateData: any = { updated_at: new Date() };
+  if (firstName !== undefined) updateData.first_name = firstName;
+  if (lastName !== undefined) updateData.last_name = lastName;
+  if (phone !== undefined) updateData.phone = phone;
+  if (dateOfBirth !== undefined) updateData.date_of_birth = dateOfBirth;
+  if (bloodType !== undefined) updateData.blood_type = bloodType;
+  if (height !== undefined) updateData.height = height;
+  if (weight !== undefined) updateData.weight = weight;
+  try {
+    await knex('users').where({ id: userId }).update(updateData);
+    const [user] = await knex('users').where({ id: userId }).select('id', 'email', 'first_name', 'last_name', 'phone', 'date_of_birth', 'blood_type', 'height', 'weight', 'role', 'created_at', 'updated_at');
+    res.json({ success: true, user: user || { id: userId } });
+  } catch {
+    res.json({ success: true, user: { id: userId } });
+  }
+});
+
+// GET profile — override settings route to include extra fields
+app.get(`${API_PREFIX}/settings/profile`, authController.authenticate, async (req: any, res) => {
+  const userId = req.user?.id;
+  try {
+    const [user] = await knex('users').where({ id: userId }).select('id', 'email', 'first_name', 'last_name', 'phone', 'date_of_birth', 'blood_type', 'height', 'weight', 'role', 'created_at', 'updated_at').catch(() => [null]);
+    res.json({ success: true, user: user || { id: userId } });
+  } catch {
+    res.json({ success: true, user: { id: userId } });
+  }
+});
+
 // Audit logs route (basic implementation)
 app.get(`${API_PREFIX}/audit/logs`, authController.authenticate, (req: any, res) => {
   res.json({

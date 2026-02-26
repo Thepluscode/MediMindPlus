@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../home/components/Header';
 import Footer from '../home/components/Footer';
-import { settingsService } from '../../services/api';
+import { preferencesService } from '../../services/api';
 import { authService } from '../../services/auth';
 
 export default function Settings() {
@@ -26,18 +26,22 @@ export default function Settings() {
   const currentUser = authService.getCurrentUser();
 
   useEffect(() => {
-    settingsService.getPrivacy()
+    preferencesService.get()
       .then((res) => {
-        if (res.data?.notifications) setNotifications(n => ({ ...n, ...res.data.notifications }));
-        if (res.data?.preferences) setPreferences(p => ({ ...p, ...res.data.preferences }));
+        const prefs = res.data?.preferences || {};
+        if (prefs.notifications) setNotifications(n => ({ ...n, ...prefs.notifications }));
+        if (prefs.language) setPreferences(p => ({ ...p, language: prefs.language }));
+        if (prefs.timezone) setPreferences(p => ({ ...p, timezone: prefs.timezone }));
+        if (prefs.dateFormat) setPreferences(p => ({ ...p, dateFormat: prefs.dateFormat }));
+        if (prefs.units) setPreferences(p => ({ ...p, units: prefs.units }));
       })
-      .catch(() => {/* use defaults */ });
+      .catch(() => {});
   }, []);
 
   const saveSettings = async () => {
     setSaveStatus('saving');
     try {
-      await settingsService.updatePrivacy({ notifications, preferences });
+      await preferencesService.update({ notifications, ...preferences });
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 2000);
     } catch {

@@ -110,6 +110,12 @@ export const dashboardService = {
     api.get(`/api/dashboard/${widgetId}/data${timeRange ? `?timeRange=${timeRange}` : ''}`),
 };
 
+// User Preferences (notifications, language, timezone, units)
+export const preferencesService = {
+  get: () => api.get('/api/settings/preferences'),
+  update: (data: any) => api.put('/api/settings/preferences', data),
+};
+
 // Team Management
 export const teamService = {
   getMembers: () => api.get('/api/team/members'),
