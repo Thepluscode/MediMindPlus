@@ -1,10 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../home/components/Header';
 import { authService } from '../../services/auth';
+import { healthAnalysisService, consultationService, analyticsService } from '../../services/api';
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'health' | 'appointments' | 'reports'>('overview');
+  const [liveMetrics, setLiveMetrics] = useState<Record<string, any>>({});
+  const [liveAppointments, setLiveAppointments] = useState<any[]>([]);
+  const [liveInsights, setLiveInsights] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Load health metrics
+    healthAnalysisService.getMetrics(7)
+      .then((res) => {
+        const d = res.data?.data || res.data;
+        if (d && typeof d === 'object') setLiveMetrics(d);
+      })
+      .catch(() => {});
+
+    // Load upcoming appointments
+    consultationService.getList()
+      .then((res) => {
+        const appts = res.data?.consultations || res.data?.data || res.data;
+        if (Array.isArray(appts) && appts.length > 0) setLiveAppointments(appts.slice(0, 3));
+      })
+      .catch(() => {});
+
+    // Load AI insights
+    analyticsService.getInsights()
+      .then((res) => {
+        const ins = res.data?.insights || res.data?.data || res.data;
+        if (Array.isArray(ins) && ins.length > 0) setLiveInsights(ins.slice(0, 3));
+      })
+      .catch(() => {});
+  }, []);
 
   const currentUser = authService.getCurrentUser();
   const fullName = currentUser
@@ -13,65 +43,127 @@ export default function DashboardPage() {
   const memberSince = currentUser?.createdAt
     ? new Date(currentUser.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : 'Recently';
+  const initials = currentUser
+    ? `${currentUser.firstName?.[0] || ''}${currentUser.lastName?.[0] || ''}`.toUpperCase() || currentUser.email?.[0]?.toUpperCase()
+    : 'G';
 
   const userData = {
     name: fullName,
     email: currentUser?.email || '',
     memberSince,
     plan: 'Free',
-    biologicalAge: null,
-    chronologicalAge: null,
-    healthScore: null
+    biologicalAge: null as number | null,
+    chronologicalAge: null as number | null,
+    healthScore: null as number | null,
   };
 
   const healthMetrics = [
-    { label: 'Heart Rate', value: '72 bpm', status: 'normal', icon: 'ri-heart-pulse-line', color: 'text-red-600', bg: 'bg-red-50' },
-    { label: 'Blood Pressure', value: '120/80', status: 'optimal', icon: 'ri-pulse-line', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Sleep Quality', value: '8.2/10', status: 'excellent', icon: 'ri-moon-line', color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Activity Level', value: '7,842 steps', status: 'good', icon: 'ri-walk-line', color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Stress Level', value: 'Low', status: 'good', icon: 'ri-mental-health-line', color: 'text-teal-600', bg: 'bg-teal-50' },
-    { label: 'BMI', value: '22.4', status: 'healthy', icon: 'ri-body-scan-line', color: 'text-orange-600', bg: 'bg-orange-50' }
+    { label: 'Heart Rate', value: liveMetrics.heartRate ?? liveMetrics.avgHeartRate ?? '72', unit: 'bpm', status: 'Normal', icon: 'ri-heart-pulse-line', gradient: 'from-rose-500 to-pink-600', bg: 'bg-rose-50', ring: 'ring-rose-100' },
+    { label: 'Blood Pressure', value: liveMetrics.bloodPressure ?? '120/80', unit: 'mmHg', status: 'Optimal', icon: 'ri-pulse-line', gradient: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50', ring: 'ring-blue-100' },
+    { label: 'Sleep Quality', value: liveMetrics.sleepScore ?? '8.2', unit: '/10', status: 'Excellent', icon: 'ri-moon-line', gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', ring: 'ring-violet-100' },
+    { label: 'Activity', value: liveMetrics.dailySteps ? liveMetrics.dailySteps.toLocaleString() : '7,842', unit: 'steps', status: 'Good', icon: 'ri-walk-line', gradient: 'from-emerald-500 to-green-600', bg: 'bg-emerald-50', ring: 'ring-emerald-100' },
+    { label: 'Stress Level', value: liveMetrics.stressLevel ?? 'Low', unit: '', status: 'Good', icon: 'ri-mental-health-line', gradient: 'from-teal-500 to-cyan-600', bg: 'bg-teal-50', ring: 'ring-teal-100' },
+    { label: 'BMI', value: liveMetrics.bmi ?? '22.4', unit: '', status: 'Healthy', icon: 'ri-body-scan-line', gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', ring: 'ring-amber-100' },
   ];
 
-  const upcomingAppointments = [
-    { date: '2024-02-15', time: '10:00 AM', type: 'Virtual Consultation', doctor: 'Dr. Emily Chen', status: 'confirmed' },
-    { date: '2024-02-22', time: '2:30 PM', type: 'Health Assessment', doctor: 'Dr. Michael Roberts', status: 'pending' },
-    { date: '2024-03-01', time: '11:00 AM', type: 'Follow-up Visit', doctor: 'Dr. Emily Chen', status: 'confirmed' }
+  const defaultAppointments = [
+    { date: 'Feb 15', time: '10:00 AM', type: 'Virtual Consultation', doctor: 'Dr. Emily Chen', specialty: 'General Practice', status: 'confirmed', avatar: 'EC' },
+    { date: 'Feb 22', time: '2:30 PM', type: 'Health Assessment', doctor: 'Dr. Michael Roberts', specialty: 'Cardiology', status: 'pending', avatar: 'MR' },
+    { date: 'Mar 1', time: '11:00 AM', type: 'Follow-up Visit', doctor: 'Dr. Emily Chen', specialty: 'General Practice', status: 'confirmed', avatar: 'EC' },
   ];
+  const upcomingAppointments = liveAppointments.length > 0
+    ? liveAppointments.map((a: any) => {
+        const start = a.startTime || a.scheduledAt;
+        const d = start ? new Date(start) : null;
+        const providerName = a.provider?.name || a.providerName || 'Dr. Unknown';
+        const initials = providerName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+        return {
+          date: d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD',
+          time: d ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'TBD',
+          type: a.type || a.consultationType || 'Consultation',
+          doctor: providerName,
+          specialty: a.specialty || a.provider?.specialty || 'General Practice',
+          status: a.status || 'pending',
+          avatar: initials,
+        };
+      })
+    : defaultAppointments;
 
   const recentReports = [
-    { name: 'Biological Age Analysis', date: '2024-01-28', type: 'PDF', size: '2.4 MB' },
-    { name: 'Health Risk Assessment', date: '2024-01-20', type: 'PDF', size: '1.8 MB' },
-    { name: 'Drug Interaction Report', date: '2024-01-15', type: 'PDF', size: '856 KB' },
-    { name: 'Mental Health Evaluation', date: '2024-01-10', type: 'PDF', size: '1.2 MB' }
+    { name: 'Biological Age Analysis', date: 'Jan 28, 2024', type: 'PDF', size: '2.4 MB', icon: 'ri-dna-line', color: 'text-indigo-600' },
+    { name: 'Health Risk Assessment', date: 'Jan 20, 2024', type: 'PDF', size: '1.8 MB', icon: 'ri-shield-check-line', color: 'text-emerald-600' },
+    { name: 'Drug Interaction Report', date: 'Jan 15, 2024', type: 'PDF', size: '856 KB', icon: 'ri-capsule-line', color: 'text-amber-600' },
+    { name: 'Mental Health Evaluation', date: 'Jan 10, 2024', type: 'PDF', size: '1.2 MB', icon: 'ri-mental-health-line', color: 'text-violet-600' },
   ];
 
-  const aiInsights = [
-    { title: 'Sleep Pattern Improvement', description: 'Your sleep quality has improved by 15% this month. Keep maintaining your bedtime routine.', icon: 'ri-moon-line', color: 'text-purple-600' },
-    { title: 'Activity Goal Achieved', description: 'Congratulations! You\'ve reached your weekly activity goal for 3 consecutive weeks.', icon: 'ri-trophy-line', color: 'text-yellow-600' },
-    { title: 'Stress Management', description: 'Your stress levels are trending downward. Consider continuing your meditation practice.', icon: 'ri-mental-health-line', color: 'text-teal-600' }
+  const defaultInsights = [
+    { title: 'Sleep Pattern Improvement', description: 'Your sleep quality improved 15% this month. Keep maintaining your bedtime routine for optimal recovery.', icon: 'ri-moon-line', gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', badge: '+15%', badgeColor: 'bg-violet-100 text-violet-700' },
+    { title: 'Activity Goal Streak', description: "You've hit your weekly activity goal 3 weeks running. Your cardiovascular health is trending upward.", icon: 'ri-trophy-line', gradient: 'from-amber-500 to-yellow-500', bg: 'bg-amber-50', badge: '3 weeks', badgeColor: 'bg-amber-100 text-amber-700' },
+    { title: 'Stress Reduction', description: 'Stress levels are down 22% since starting meditation. Consider extending sessions to 15 minutes.', icon: 'ri-mental-health-line', gradient: 'from-teal-500 to-emerald-500', bg: 'bg-teal-50', badge: '-22%', badgeColor: 'bg-teal-100 text-teal-700' },
+  ];
+  const aiInsights = liveInsights.length > 0
+    ? liveInsights.map((ins: any, i: number) => ({
+        title: ins.title || ins.name || 'Health Insight',
+        description: ins.description || ins.message || '',
+        icon: ins.icon || defaultInsights[i % 3].icon,
+        gradient: ins.gradient || defaultInsights[i % 3].gradient,
+        bg: ins.bg || defaultInsights[i % 3].bg,
+        badge: ins.badge || ins.change || '',
+        badgeColor: ins.badgeColor || defaultInsights[i % 3].badgeColor,
+      }))
+    : defaultInsights;
+
+  const quickActions = [
+    { label: 'Book Appointment', description: 'Schedule a visit', icon: 'ri-calendar-check-line', gradient: 'from-indigo-500 to-blue-600', link: '/book-appointment' },
+    { label: 'Health Analytics', description: 'View your trends', icon: 'ri-line-chart-line', gradient: 'from-violet-500 to-purple-600', link: '/health-analytics' },
+    { label: 'Virtual Health Twin', description: 'Digital simulation', icon: 'ri-user-heart-line', gradient: 'from-emerald-500 to-teal-600', link: '/virtual-health-twin' },
+    { label: 'Find a Doctor', description: 'Browse providers', icon: 'ri-stethoscope-line', gradient: 'from-rose-500 to-pink-600', link: '/find-doctor' },
+  ];
+
+  const tabs = [
+    { key: 'overview' as const, label: 'Overview', icon: 'ri-dashboard-line' },
+    { key: 'health' as const, label: 'Health Metrics', icon: 'ri-heart-pulse-line' },
+    { key: 'appointments' as const, label: 'Appointments', icon: 'ri-calendar-line' },
+    { key: 'reports' as const, label: 'Reports', icon: 'ri-file-chart-line' },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen mesh-gradient">
       <Header />
-      
+
       <main className="pt-20">
-        {/* Dashboard Header */}
-        <div className="bg-gradient-to-r from-teal-600 to-teal-700 text-white py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl font-bold mb-2">Welcome back, {userData.name}!</h1>
-                <p className="text-teal-100">Here's your health overview for today</p>
-              </div>
-              <div className="hidden md:flex items-center gap-4">
-                <div className="text-right">
-                  <p className="text-sm text-teal-100">Member Since</p>
-                  <p className="font-semibold">{userData.memberSince}</p>
+        {/* Dashboard Hero */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-blue-600 to-teal-500 animate-gradient"></div>
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 40%),
+                              radial-gradient(circle at 40% 80%, rgba(255,255,255,0.05) 0%, transparent 60%)`,
+          }}></div>
+
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-white/20 backdrop-blur-xl flex items-center justify-center ring-2 ring-white/30">
+                  <span className="text-white font-bold text-2xl lg:text-3xl">{initials}</span>
                 </div>
-                <div className="w-16 h-16 flex items-center justify-center bg-white/20 rounded-full">
-                  <i className="ri-user-line text-3xl"></i>
+                <div>
+                  <p className="text-white/70 text-sm font-medium mb-1">Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},</p>
+                  <h1 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight">{userData.name}</h1>
+                  <p className="text-white/60 text-sm mt-1">Here's your personalized health overview</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="glass-dark rounded-2xl px-5 py-3">
+                  <p className="text-white/50 text-xs font-medium uppercase tracking-wider">Member Since</p>
+                  <p className="text-white font-semibold text-sm">{userData.memberSince}</p>
+                </div>
+                <div className="glass-dark rounded-2xl px-5 py-3">
+                  <p className="text-white/50 text-xs font-medium uppercase tracking-wider">Plan</p>
+                  <p className="text-white font-semibold text-sm flex items-center gap-1.5">
+                    <i className="ri-vip-crown-line text-amber-400"></i>
+                    {userData.plan}
+                  </p>
                 </div>
               </div>
             </div>
@@ -79,198 +171,206 @@ export default function DashboardPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white border-b border-gray-200 sticky top-20 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex gap-8">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                  activeTab === 'overview'
-                    ? 'border-teal-600 text-teal-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab('health')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                  activeTab === 'health'
-                    ? 'border-teal-600 text-teal-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Health Metrics
-              </button>
-              <button
-                onClick={() => setActiveTab('appointments')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                  activeTab === 'appointments'
-                    ? 'border-teal-600 text-teal-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Appointments
-              </button>
-              <button
-                onClick={() => setActiveTab('reports')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                  activeTab === 'reports'
-                    ? 'border-teal-600 text-teal-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Reports
-              </button>
+        <div className="sticky top-[72px] z-20">
+          <div className="glass border-b border-white/30">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex gap-1 overflow-x-auto py-2 scrollbar-none">
+                {tabs.map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap cursor-pointer ${activeTab === tab.key
+                        ? 'bg-indigo-600 text-white shadow-glow-indigo'
+                        : 'text-slate-600 hover:bg-white/60 hover:text-indigo-600'
+                      }`}
+                  >
+                    <i className={`${tab.icon} text-base`}></i>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Dashboard Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
           {activeTab === 'overview' && (
-            <div className="space-y-8">
-              {/* Key Stats */}
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-scale-in hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-gray-600">Health Score</h3>
-                    <div className="w-10 h-10 flex items-center justify-center bg-green-100 rounded-lg animate-pulse-slow">
-                      <i className="ri-heart-pulse-line text-xl text-green-600"></i>
+            <div className="space-y-8 animate-fade-in">
+              {/* Key Stats Row */}
+              <div className="grid md:grid-cols-3 gap-5">
+                {/* Health Score */}
+                <div className="card-gradient-border p-6 animate-scale-in">
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Health Score</h3>
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-glow-teal">
+                      <i className="ri-heart-pulse-line text-xl text-white"></i>
                     </div>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">{userData.healthScore ?? '—'}{userData.healthScore ? '/100' : ''}</p>
-                  <p className="text-sm text-gray-400 mt-2">Complete your health profile</p>
+                  <p className="text-4xl font-extrabold text-slate-900">{userData.healthScore ?? '—'}<span className="text-lg font-medium text-slate-400">{userData.healthScore ? '/100' : ''}</span></p>
+                  <p className="text-sm text-slate-400 mt-2 flex items-center gap-1.5">
+                    <i className="ri-arrow-right-line text-indigo-500"></i>
+                    Complete your health profile to unlock
+                  </p>
                 </div>
 
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-scale-in animation-delay-100 hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-gray-600">Biological Age</h3>
-                    <div className="w-10 h-10 flex items-center justify-center bg-purple-100 rounded-lg animate-pulse-slow">
-                      <i className="ri-time-line text-xl text-purple-600"></i>
+                {/* Biological Age */}
+                <div className="card-gradient-border p-6 animate-scale-in animation-delay-100">
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Biological Age</h3>
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-glow-purple">
+                      <i className="ri-time-line text-xl text-white"></i>
                     </div>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">{userData.biologicalAge ?? '—'}{userData.biologicalAge ? ' years' : ''}</p>
-                  <p className="text-sm text-gray-400 mt-2">Run a health assessment</p>
+                  <p className="text-4xl font-extrabold text-slate-900">{userData.biologicalAge ?? '—'}<span className="text-lg font-medium text-slate-400">{userData.biologicalAge ? ' years' : ''}</span></p>
+                  <p className="text-sm text-slate-400 mt-2 flex items-center gap-1.5">
+                    <i className="ri-arrow-right-line text-indigo-500"></i>
+                    Run a health assessment to calculate
+                  </p>
                 </div>
 
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-scale-in animation-delay-200 hover:shadow-md transition-all duration-300">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-gray-600">Plan Status</h3>
-                    <div className="w-10 h-10 flex items-center justify-center bg-teal-100 rounded-lg animate-pulse-slow">
-                      <i className="ri-vip-crown-line text-xl text-teal-600"></i>
+                {/* Plan Status */}
+                <div className="card-gradient-border p-6 animate-scale-in animation-delay-200">
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Current Plan</h3>
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                      <i className="ri-vip-crown-line text-xl text-white"></i>
                     </div>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">{userData.plan}</p>
-                  <p className="text-sm text-gray-600 mt-2">Active subscription</p>
+                  <p className="text-4xl font-extrabold text-slate-900">{userData.plan}</p>
+                  <p className="text-sm mt-2">
+                    <Link to="/pricing" className="text-indigo-600 font-medium hover:text-indigo-700 flex items-center gap-1">
+                      Upgrade to Pro <i className="ri-arrow-right-up-line"></i>
+                    </Link>
+                  </p>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div>
+                <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <i className="ri-flashlight-line text-indigo-500"></i>
+                  Quick Actions
+                </h2>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {quickActions.map((action, i) => (
+                    <Link
+                      key={i}
+                      to={action.link}
+                      className="card-premium p-5 group cursor-pointer"
+                    >
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.gradient} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-lg transition-all duration-300`}>
+                        <i className={`${action.icon} text-xl text-white`}></i>
+                      </div>
+                      <h3 className="font-bold text-slate-900 text-sm mb-0.5">{action.label}</h3>
+                      <p className="text-xs text-slate-500">{action.description}</p>
+                    </Link>
+                  ))}
                 </div>
               </div>
 
               {/* AI Insights */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-fade-in-up animation-delay-300">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">AI-Powered Insights</h2>
-                <div className="space-y-4">
-                  {aiInsights.map((insight, index) => (
-                    <div key={index} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300 animate-fade-in-left"
-                      style={{ animationDelay: `${(index + 4) * 100}ms` }}
+              <div>
+                <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <i className="ri-sparkling-2-line text-violet-500"></i>
+                  AI-Powered Insights
+                </h2>
+                <div className="space-y-3">
+                  {aiInsights.map((insight, i) => (
+                    <div
+                      key={i}
+                      className="card-premium p-5 flex items-start gap-4 animate-fade-in-left"
+                      style={{ animationDelay: `${i * 100}ms` }}
                     >
-                      <div className={`w-10 h-10 flex items-center justify-center bg-white rounded-lg flex-shrink-0 ${insight.color}`}>
-                        <i className={`${insight.icon} text-xl`}></i>
+                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${insight.gradient} flex items-center justify-center flex-shrink-0 shadow-lg`}>
+                        <i className={`${insight.icon} text-lg text-white`}></i>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">{insight.title}</h3>
-                        <p className="text-sm text-gray-600">{insight.description}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-bold text-slate-900 text-sm">{insight.title}</h3>
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${insight.badgeColor}`}>
+                            {insight.badge}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-500 leading-relaxed">{insight.description}</p>
                       </div>
+                      <button className="text-slate-300 hover:text-indigo-500 transition-colors flex-shrink-0 cursor-pointer">
+                        <i className="ri-arrow-right-s-line text-xl"></i>
+                      </button>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {[
-                  { label: 'Book Appointment', icon: 'ri-calendar-line', color: 'from-blue-500 to-teal-500', link: '/book-appointment' },
-                  { label: 'Health Analytics', icon: 'ri-line-chart-line', color: 'from-purple-500 to-pink-500', link: '/health-analytics' },
-                  { label: 'Virtual Health Twin', icon: 'ri-user-heart-line', color: 'from-green-500 to-emerald-500', link: '/virtual-health-twin' },
-                  { label: 'Contact Support', icon: 'ri-customer-service-line', color: 'from-orange-500 to-red-500', link: '/contact' }
-                ].map((action, index) => (
-                  <Link
-                    key={index}
-                    to={action.link}
-                    className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 group cursor-pointer"
-                  >
-                    <div className={`w-14 h-14 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                      <i className={`${action.icon} text-2xl text-white`}></i>
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900">{action.label}</h3>
-                  </Link>
-                ))}
-
-                <button
-                  onClick={() => window.REACT_APP_NAVIGATE('/team-management')}
-                  className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 text-left group"
-                >
-                  <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <i className="ri-team-line text-2xl text-teal-600"></i>
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Team Management</h3>
-                  <p className="text-sm text-gray-600">Manage team members and roles</p>
-                </button>
-
-                <button
-                  onClick={() => window.REACT_APP_NAVIGATE('/audit-logs')}
-                  className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 text-left group"
-                >
-                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <i className="ri-file-list-3-line text-2xl text-purple-600"></i>
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Audit Logs</h3>
-                  <p className="text-sm text-gray-600">Track critical system events</p>
-                </button>
-
-                <button
-                  onClick={() => window.REACT_APP_NAVIGATE('/roles-permissions')}
-                  className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 text-left group"
-                >
-                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <i className="ri-shield-user-line text-2xl text-red-600"></i>
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Roles & Permissions</h3>
-                  <p className="text-sm text-gray-600">Configure access control</p>
-                </button>
+              {/* Admin Quick Access */}
+              <div>
+                <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <i className="ri-settings-4-line text-slate-500"></i>
+                  Administration
+                </h2>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {[
+                    { label: 'Team Management', desc: 'Manage members & roles', icon: 'ri-team-line', gradient: 'from-blue-500 to-indigo-600', link: '/team-management' },
+                    { label: 'Audit Logs', desc: 'Track system events', icon: 'ri-file-list-3-line', gradient: 'from-violet-500 to-purple-600', link: '/audit-logs' },
+                    { label: 'Roles & Permissions', desc: 'Configure access', icon: 'ri-shield-user-line', gradient: 'from-rose-500 to-red-600', link: '/roles-permissions' },
+                  ].map((item, i) => (
+                    <Link
+                      key={i}
+                      to={item.link}
+                      className="card-premium p-5 flex items-center gap-4 group cursor-pointer"
+                    >
+                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                        <i className={`${item.icon} text-lg text-white`}></i>
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-sm">{item.label}</h3>
+                        <p className="text-xs text-slate-500">{item.desc}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
           {activeTab === 'health' && (
-            <div className="space-y-8">
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Current Health Metrics</h2>
-                <div className="grid md:grid-cols-3 gap-6">
-                  {healthMetrics.map((metric, index) => (
-                    <div key={index} className="p-6 bg-gray-50 rounded-xl">
+            <div className="space-y-8 animate-fade-in">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <i className="ri-heart-pulse-line text-rose-500"></i>
+                  Current Health Metrics
+                </h2>
+                <div className="grid md:grid-cols-3 gap-5">
+                  {healthMetrics.map((metric, i) => (
+                    <div key={i} className="card-gradient-border p-6 animate-scale-in" style={{ animationDelay: `${i * 80}ms` }}>
                       <div className="flex items-center justify-between mb-4">
-                        <div className={`w-12 h-12 flex items-center justify-center ${metric.bg} rounded-lg`}>
-                          <i className={`${metric.icon} text-2xl ${metric.color}`}></i>
+                        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${metric.gradient} flex items-center justify-center`}>
+                          <i className={`${metric.icon} text-xl text-white`}></i>
                         </div>
-                        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                        <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full ring-1 ring-emerald-200">
                           {metric.status}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-1">{metric.label}</p>
-                      <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{metric.label}</p>
+                      <p className="text-3xl font-extrabold text-slate-900">
+                        {metric.value}
+                        <span className="text-sm font-medium text-slate-400 ml-1">{metric.unit}</span>
+                      </p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Health Trends Chart Placeholder */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Health Trends (Last 30 Days)</h2>
-                <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+              {/* Trends Placeholder */}
+              <div className="card-gradient-border p-8">
+                <h2 className="text-lg font-bold text-slate-800 mb-6">Health Trends — Last 30 Days</h2>
+                <div className="h-64 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/50 flex items-center justify-center">
                   <div className="text-center">
-                    <i className="ri-line-chart-line text-5xl text-gray-300 mb-2"></i>
-                    <p className="text-gray-500">Chart visualization coming soon</p>
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center mb-3">
+                      <i className="ri-line-chart-line text-3xl text-indigo-400"></i>
+                    </div>
+                    <p className="text-slate-500 font-medium">Interactive charts coming soon</p>
+                    <p className="text-xs text-slate-400 mt-1">Connect a wearable to start tracking</p>
                   </div>
                 </div>
               </div>
@@ -278,37 +378,43 @@ export default function DashboardPage() {
           )}
 
           {activeTab === 'appointments' && (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="animate-fade-in">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Upcoming Appointments</h2>
-                <button className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors whitespace-nowrap">
-                  Book New Appointment
-                </button>
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <i className="ri-calendar-line text-indigo-500"></i>
+                  Upcoming Appointments
+                </h2>
+                <Link
+                  to="/book-appointment"
+                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-semibold rounded-xl hover:shadow-glow-indigo transition-all flex items-center gap-2"
+                >
+                  <i className="ri-add-line"></i>
+                  Book New
+                </Link>
               </div>
-              <div className="space-y-4">
-                {upcomingAppointments.map((appointment, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="space-y-3">
+                {upcomingAppointments.map((apt, i) => (
+                  <div key={i} className="card-premium p-5 flex items-center justify-between animate-fade-in-left" style={{ animationDelay: `${i * 80}ms` }}>
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 flex items-center justify-center bg-teal-100 rounded-lg">
-                        <i className="ri-calendar-event-line text-xl text-teal-600"></i>
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-xs">{apt.avatar}</span>
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">{appointment.type}</h3>
-                        <p className="text-sm text-gray-600">{appointment.doctor}</p>
-                        <p className="text-sm text-gray-500">{appointment.date} at {appointment.time}</p>
+                        <h3 className="font-bold text-slate-900 text-sm">{apt.type}</h3>
+                        <p className="text-sm text-slate-600">{apt.doctor} · <span className="text-slate-400">{apt.specialty}</span></p>
+                        <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                          <i className="ri-calendar-event-line"></i>
+                          {apt.date} at {apt.time}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-                        appointment.status === 'confirmed' 
-                          ? 'bg-green-50 text-green-600' 
-                          : 'bg-yellow-50 text-yellow-600'
-                      }`}>
-                        {appointment.status}
+                      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${apt.status === 'confirmed'
+                          ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                          : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
+                        }`}>
+                        {apt.status === 'confirmed' ? '✓ Confirmed' : '⏳ Pending'}
                       </span>
-                      <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
-                        <i className="ri-more-2-fill text-xl"></i>
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -317,21 +423,25 @@ export default function DashboardPage() {
           )}
 
           {activeTab === 'reports' && (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Reports</h2>
+            <div className="animate-fade-in">
+              <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                <i className="ri-file-chart-line text-indigo-500"></i>
+                Recent Reports
+              </h2>
               <div className="space-y-3">
-                {recentReports.map((report, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                {recentReports.map((report, i) => (
+                  <div key={i} className="card-premium p-5 flex items-center justify-between group animate-fade-in-left" style={{ animationDelay: `${i * 80}ms` }}>
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 flex items-center justify-center bg-red-100 rounded-lg">
-                        <i className="ri-file-pdf-line text-xl text-red-600"></i>
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center ring-1 ring-slate-200">
+                        <i className={`${report.icon} text-xl ${report.color}`}></i>
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900">{report.name}</h3>
-                        <p className="text-sm text-gray-500">{report.date} • {report.size}</p>
+                        <h3 className="font-bold text-slate-900 text-sm">{report.name}</h3>
+                        <p className="text-xs text-slate-400 mt-0.5">{report.date} · {report.size}</p>
                       </div>
                     </div>
-                    <button className="text-teal-600 hover:text-teal-700 font-medium text-sm whitespace-nowrap">
+                    <button className="px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer flex items-center gap-1.5">
+                      <i className="ri-download-line"></i>
                       Download
                     </button>
                   </div>

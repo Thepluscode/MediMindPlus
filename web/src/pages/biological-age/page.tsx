@@ -1,8 +1,9 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import Header from '../home/components/Header';
 import Footer from '../home/components/Footer';
+import { revolutionaryService } from '../../services/api';
 
 const agingHallmarks = [
   { category: 'Primary', name: 'Genomic Instability', score: 82, icon: 'ri-dna-line', color: 'from-red-500 to-pink-500' },
@@ -34,8 +35,23 @@ const agingPaceData = [
 
 export default function BiologicalAge() {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState('Horvath Clock');
+  const [bioAgeData, setBioAgeData] = useState<{ biologicalAge?: number; chronologicalAge?: number; agingPace?: number; percentile?: number; predictedLifespan?: number } | null>(null);
 
   const algorithms = ['Horvath Clock', 'Hannum Clock', 'PhenoAge', 'GrimAge'];
+
+  useEffect(() => {
+    revolutionaryService.getBiologicalAge()
+      .then((res) => {
+        const d = res.data?.data || res.data;
+        if (d) setBioAgeData(d);
+      })
+      .catch(() => {/* use mock values */});
+  }, []);
+
+  const biologicalAge = bioAgeData?.biologicalAge ?? 32;
+  const chronologicalAge = bioAgeData?.chronologicalAge ?? 38;
+  const agingPace = bioAgeData?.agingPace ?? 0.82;
+  const predictedLifespan = bioAgeData?.predictedLifespan ?? 94;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -67,12 +83,12 @@ export default function BiologicalAge() {
               <div className="grid grid-cols-2 gap-6">
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                   <p className="text-orange-100 text-sm font-semibold mb-2">BIOLOGICAL AGE</p>
-                  <p className="text-6xl font-bold mb-2">32</p>
+                  <p className="text-6xl font-bold mb-2">{biologicalAge}</p>
                   <p className="text-orange-100">years</p>
                 </div>
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                   <p className="text-orange-100 text-sm font-semibold mb-2">CHRONOLOGICAL AGE</p>
-                  <p className="text-6xl font-bold mb-2">38</p>
+                  <p className="text-6xl font-bold mb-2">{chronologicalAge}</p>
                   <p className="text-orange-100">years</p>
                 </div>
               </div>
@@ -80,7 +96,7 @@ export default function BiologicalAge() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-orange-100 mb-1">AGING PACE</p>
-                    <p className="text-3xl font-bold">0.82</p>
+                    <p className="text-3xl font-bold">{agingPace}</p>
                     <p className="text-sm text-orange-100">years per year</p>
                   </div>
                   <div className="text-center">
@@ -96,7 +112,7 @@ export default function BiologicalAge() {
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Lifespan Prediction</h2>
               <div className="text-center mb-6">
                 <p className="text-slate-600 mb-2">Predicted Lifespan</p>
-                <p className="text-6xl font-bold text-slate-900 mb-2">94</p>
+                <p className="text-6xl font-bold text-slate-900 mb-2">{predictedLifespan}</p>
                 <p className="text-slate-600">years</p>
                 <div className="mt-4 bg-slate-100 rounded-lg p-3">
                   <p className="text-sm text-slate-600">Confidence Interval: 89-98 years</p>

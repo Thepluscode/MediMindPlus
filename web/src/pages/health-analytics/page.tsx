@@ -1,11 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Header from '../home/components/Header';
 import Footer from '../home/components/Footer';
+import { healthAnalysisService, analyticsService } from '../../services/api';
 
 export default function HealthAnalytics() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [selectedMetric, setSelectedMetric] = useState<'all' | 'heart' | 'sleep' | 'activity' | 'stress'>('all');
+  const [insights, setInsights] = useState<Array<{ title: string; description: string; icon: string; color: string }>>([]);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [keyMetrics, setKeyMetrics] = useState({
+    avgHeartRate: '68 bpm',
+    sleepScore: '87/100',
+    dailySteps: '9,250',
+    stressLevel: 'Low',
+  });
+
+  useEffect(() => {
+    const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : timeRange === '90d' ? 90 : 365;
+    setMetricsLoading(true);
+    Promise.all([
+      healthAnalysisService.getMetrics(days).catch(() => null),
+      analyticsService.getInsights().catch(() => null),
+    ]).then(([metricsRes, insightsRes]) => {
+      if (metricsRes?.data) {
+        const m = metricsRes.data;
+        setKeyMetrics({
+          avgHeartRate: m.avgHeartRate ? `${m.avgHeartRate} bpm` : '68 bpm',
+          sleepScore: m.sleepScore ? `${m.sleepScore}/100` : '87/100',
+          dailySteps: m.dailySteps ? m.dailySteps.toLocaleString() : '9,250',
+          stressLevel: m.stressLevel || 'Low',
+        });
+      }
+      if (insightsRes?.data) {
+        const raw = insightsRes.data?.insights || insightsRes.data?.data || insightsRes.data;
+        if (Array.isArray(raw) && raw.length > 0) {
+          setInsights(raw.slice(0, 3).map((ins: any) => ({
+            title: ins.title || ins.name || 'Health Insight',
+            description: ins.description || ins.message || '',
+            icon: ins.icon || 'ri-lightbulb-line',
+            color: ins.color || 'from-blue-500 to-teal-500',
+          })));
+        }
+      }
+    }).finally(() => setMetricsLoading(false));
+  }, [timeRange]);
 
   // Heart Rate Data
   const heartRateData = [
@@ -133,10 +172,10 @@ export default function HealthAnalytics() {
           {/* Key Metrics Summary */}
           <div className="grid md:grid-cols-4 gap-6 mb-8">
             {[
-              { label: 'Avg Heart Rate', value: '68 bpm', change: '-2.8%', icon: 'ri-heart-pulse-line', color: 'from-red-500 to-pink-500', positive: true },
-              { label: 'Sleep Score', value: '87/100', change: '+5.2%', icon: 'ri-moon-line', color: 'from-purple-500 to-indigo-500', positive: true },
-              { label: 'Daily Steps', value: '9,250', change: '+12.4%', icon: 'ri-walk-line', color: 'from-green-500 to-emerald-500', positive: true },
-              { label: 'Stress Level', value: 'Low', change: '-8.1%', icon: 'ri-mental-health-line', color: 'from-blue-500 to-teal-500', positive: true }
+              { label: 'Avg Heart Rate', value: keyMetrics.avgHeartRate, change: '-2.8%', icon: 'ri-heart-pulse-line', color: 'from-red-500 to-pink-500', positive: true },
+              { label: 'Sleep Score', value: keyMetrics.sleepScore, change: '+5.2%', icon: 'ri-moon-line', color: 'from-purple-500 to-indigo-500', positive: true },
+              { label: 'Daily Steps', value: keyMetrics.dailySteps, change: '+12.4%', icon: 'ri-walk-line', color: 'from-green-500 to-emerald-500', positive: true },
+              { label: 'Stress Level', value: keyMetrics.stressLevel, change: '-8.1%', icon: 'ri-mental-health-line', color: 'from-blue-500 to-teal-500', positive: true }
             ].map((metric, index) => (
               <div key={index} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
                 <div className={`w-12 h-12 bg-gradient-to-br ${metric.color} rounded-xl flex items-center justify-center mb-4`}>
@@ -338,7 +377,7 @@ export default function HealthAnalytics() {
 
           {/* Insights & Recommendations */}
           <div className="grid md:grid-cols-3 gap-6">
-            {[
+            {(insights.length > 0 ? insights : [
               {
                 title: 'Excellent Progress',
                 description: 'Your cardiovascular health has improved by 8% this month. Keep up the great work!',
@@ -353,11 +392,11 @@ export default function HealthAnalytics() {
               },
               {
                 title: 'Activity Goal',
-                description: 'You\'re 250 steps away from your weekly goal. A short walk will get you there!',
+                description: "You're 250 steps away from your weekly goal. A short walk will get you there!",
                 icon: 'ri-flag-line',
                 color: 'from-purple-500 to-pink-500'
               }
-            ].map((insight, index) => (
+            ]).map((insight, index) => (
               <div key={index} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
                 <div className={`w-12 h-12 bg-gradient-to-br ${insight.color} rounded-xl flex items-center justify-center mb-4`}>
                   <i className={`${insight.icon} text-2xl text-white`}></i>

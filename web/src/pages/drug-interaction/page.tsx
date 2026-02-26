@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Header from '../home/components/Header';
 import Footer from '../home/components/Footer';
+import { revolutionaryService } from '../../services/api';
 
 interface Medication {
   id: string;
@@ -41,6 +42,9 @@ export default function DrugInteraction() {
   const [isPregnant, setIsPregnant] = useState(false);
   const [isBreastfeeding, setIsBreastfeeding] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [interactions, setInteractions] = useState<Interaction[]>(mockInteractions);
+  const [isChecking, setIsChecking] = useState(false);
+  const [checkError, setCheckError] = useState('');
 
   const addMedication = () => {
     if (newMed.name && newMed.dosage) {
@@ -67,8 +71,30 @@ export default function DrugInteraction() {
     }
   };
 
-  const checkInteractions = () => {
-    setShowResults(true);
+  const checkInteractions = async () => {
+    if (medications.length < 1) {
+      setShowResults(true);
+      return;
+    }
+    setIsChecking(true);
+    setCheckError('');
+    try {
+      const res = await revolutionaryService.checkDrugInteractions({
+        medications: medications.map(m => ({ name: m.name, dosage: m.dosage })),
+        allergies,
+        conditions,
+        isPregnant,
+        isBreastfeeding,
+      });
+      if (res.data?.interactions) setInteractions(res.data.interactions);
+      else if (res.data?.data?.interactions) setInteractions(res.data.data.interactions);
+    } catch {
+      // Fall back to mock data if API unavailable
+      setInteractions(mockInteractions);
+    } finally {
+      setIsChecking(false);
+      setShowResults(true);
+    }
   };
 
   const getSeverityColor = (severity: string) => {
@@ -240,10 +266,12 @@ export default function DrugInteraction() {
 
               <button
                 onClick={checkInteractions}
-                className="w-full px-8 py-4 bg-gradient-to-r from-red-500 to-rose-600 text-white text-lg font-bold rounded-xl hover:shadow-2xl hover:scale-105 transition-all cursor-pointer whitespace-nowrap"
+                disabled={isChecking}
+                className="w-full px-8 py-4 bg-gradient-to-r from-red-500 to-rose-600 text-white text-lg font-bold rounded-xl hover:shadow-2xl hover:scale-105 transition-all cursor-pointer whitespace-nowrap disabled:opacity-50"
               >
-                Check Interactions
+                {isChecking ? 'Checking...' : 'Check Interactions'}
               </button>
+              {checkError && <p className="text-red-600 text-sm text-center">{checkError}</p>}
             </div>
 
             {/* Results Section */}
@@ -260,12 +288,12 @@ export default function DrugInteraction() {
                       </div>
                     </div>
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                      <p className="text-sm">{mockInteractions.length} interactions found requiring immediate attention</p>
+                      <p className="text-sm">{interactions.length} interactions found requiring immediate attention</p>
                     </div>
                   </div>
 
                   {/* Interactions */}
-                  {mockInteractions.map((interaction, index) => (
+                  {interactions.map((interaction, index) => (
                     <div key={index} className="bg-white rounded-2xl p-6 shadow-lg">
                       <div className="flex items-start gap-4 mb-4">
                         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getSeverityColor(interaction.severity)} flex items-center justify-center flex-shrink-0`}>

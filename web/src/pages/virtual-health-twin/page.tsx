@@ -1,8 +1,9 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import Header from '../home/components/Header';
 import Footer from '../home/components/Footer';
+import { revolutionaryService } from '../../services/api';
 
 const bodySystems = [
   { name: 'Cardiovascular', score: 87, icon: 'ri-heart-pulse-line', color: 'from-red-500 to-pink-500', status: 'Excellent' },
@@ -30,6 +31,30 @@ const simulations = [
 
 export default function VirtualHealthTwin() {
   const [selectedSimulation, setSelectedSimulation] = useState<string | null>(null);
+  const [twinData, setTwinData] = useState<{ biologicalAge?: number; chronologicalAge?: number; yearsDiff?: number } | null>(null);
+  const [systems, setSystems] = useState(bodySystems);
+  const [predictions, setPredictions] = useState(treatmentPredictions);
+
+  useEffect(() => {
+    Promise.all([
+      revolutionaryService.getTwin().catch(() => null),
+      revolutionaryService.getTwinPredictions().catch(() => null),
+    ]).then(([twinRes, predictRes]) => {
+      if (twinRes?.data) {
+        const d = twinRes.data?.data || twinRes.data;
+        if (d) setTwinData(d);
+        if (d?.bodySystems && Array.isArray(d.bodySystems)) setSystems(d.bodySystems);
+      }
+      if (predictRes?.data) {
+        const p = predictRes.data?.predictions || predictRes.data?.data || predictRes.data;
+        if (Array.isArray(p) && p.length > 0) setPredictions(p);
+      }
+    });
+  }, []);
+
+  const bioAge = twinData?.biologicalAge ?? 32;
+  const chronoAge = twinData?.chronologicalAge ?? 38;
+  const yearsDiff = twinData?.yearsDiff ?? (chronoAge - bioAge);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -59,14 +84,14 @@ export default function VirtualHealthTwin() {
               <div>
                 <p className="text-purple-100 text-sm font-semibold mb-2">YOUR BIOLOGICAL AGE</p>
                 <div className="flex items-baseline gap-4">
-                  <span className="text-6xl font-bold">32</span>
+                  <span className="text-6xl font-bold">{bioAge}</span>
                   <span className="text-2xl text-purple-200">years</span>
                 </div>
-                <p className="text-purple-100 mt-2">Chronological Age: 38 years</p>
+                <p className="text-purple-100 mt-2">Chronological Age: {chronoAge} years</p>
               </div>
               <div className="text-center bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                 <i className="ri-trophy-line text-5xl mb-2"></i>
-                <p className="text-sm font-semibold">6 Years Younger</p>
+                <p className="text-sm font-semibold">{yearsDiff} Years Younger</p>
                 <p className="text-xs text-purple-200 mt-1">Than Chronological Age</p>
               </div>
             </div>
@@ -78,7 +103,7 @@ export default function VirtualHealthTwin() {
             <div className="bg-white rounded-2xl p-8 shadow-lg">
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Body Systems Health</h2>
               <div className="space-y-4">
-                {bodySystems.map((system, index) => (
+                {systems.map((system, index) => (
                   <div key={index} className="group hover:bg-slate-50 rounded-xl p-4 transition-colors cursor-pointer">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
@@ -124,7 +149,7 @@ export default function VirtualHealthTwin() {
           <div className="bg-white rounded-2xl p-8 shadow-lg mb-8">
             <h2 className="text-2xl font-bold text-slate-900 mb-6">Treatment Predictions</h2>
             <div className="grid md:grid-cols-3 gap-6">
-              {treatmentPredictions.map((treatment, index) => (
+              {predictions.map((treatment, index) => (
                 <div key={index} className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-6 hover:shadow-lg transition-shadow cursor-pointer">
                   <h3 className="font-bold text-slate-900 mb-4">{treatment.treatment}</h3>
                   <div className="space-y-3">

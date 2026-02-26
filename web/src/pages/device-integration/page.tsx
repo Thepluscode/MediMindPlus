@@ -1,7 +1,9 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../home/components/Header';
 import logger from '../../utils/logger';
+import { wearableService } from '../../services/api';
+import { authService } from '../../services/auth';
 
 interface Device {
   id: string;
@@ -17,6 +19,44 @@ interface Device {
 }
 
 export default function DeviceIntegrationPage() {
+  const [realtimeMetrics, setRealtimeMetrics] = useState<{ steps?: number; heartRate?: number; sleep?: string; calories?: number } | null>(null);
+
+  useEffect(() => {
+    const currentUser = authService.getCurrentUser();
+    // Load real-time biometrics
+    wearableService.getBiometrics()
+      .then((res) => {
+        const d = res.data?.data || res.data;
+        if (d) setRealtimeMetrics(d);
+      })
+      .catch(() => {/* use mock values */});
+
+    // Load synced devices if user is authenticated
+    if (currentUser?.id) {
+      wearableService.getDevices()
+        .then((res) => {
+          const devs = res.data?.devices || res.data?.data || res.data;
+          if (Array.isArray(devs) && devs.length > 0) {
+            // Map API response to local Device format
+            const mapped: Device[] = devs.map((d: any) => ({
+              id: d.id || d.deviceId,
+              name: d.name || d.deviceName || d.source,
+              brand: d.brand || 'Unknown',
+              type: d.type || 'Wearable',
+              icon: 'ri-device-line',
+              color: 'text-teal-600',
+              bgColor: 'bg-teal-100',
+              connected: true,
+              lastSync: d.lastSync ? new Date(d.lastSync).toLocaleString() : 'Recently',
+              metrics: d.metrics || [],
+            }));
+            setConnectedDevices(mapped);
+          }
+        })
+        .catch(() => {/* use mock data */});
+    }
+  }, []);
+
   const [connectedDevices, setConnectedDevices] = useState<Device[]>([
     {
       id: '1',
@@ -107,46 +147,31 @@ export default function DeviceIntegrationPage() {
     }
   ];
 
-  const handleConnect = (device: Device) => {
+  const handleConnect = async (device: Device) => {
     try {
-      setConnectedDevices([...connectedDevices, { ...device, connected: true, lastSync: 'Just now' }]);
-      logger.info('Device connected', {
-        service: 'device-integration',
-        deviceId: device.id,
-        deviceName: device.name,
-        deviceType: device.type
-      });
+      setConnectedDevices(prev => [...prev, { ...device, connected: true, lastSync: 'Just now' }]);
+      await wearableService.connectDevice(device.type).catch(() => {/* ignore API error, optimistic update */});
+      logger.info('Device connected', { service: 'device-integration', deviceId: device.id, deviceName: device.name });
     } catch (error) {
-      logger.error('Failed to connect device', {
-        service: 'device-integration',
-        deviceId: device.id,
-        deviceName: device.name,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logger.error('Failed to connect device', { service: 'device-integration', deviceId: device.id, error: error instanceof Error ? error.message : String(error) });
     }
   };
 
-  const handleDisconnect = (deviceId: string) => {
+  const handleDisconnect = async (deviceId: string) => {
     try {
-      setConnectedDevices(connectedDevices.filter(d => d.id !== deviceId));
-      logger.info('Device disconnected', {
-        service: 'device-integration',
-        deviceId
-      });
+      setConnectedDevices(prev => prev.filter(d => d.id !== deviceId));
+      await wearableService.disconnectDevice(deviceId).catch(() => {/* ignore */});
+      logger.info('Device disconnected', { service: 'device-integration', deviceId });
     } catch (error) {
-      logger.error('Failed to disconnect device', {
-        service: 'device-integration',
-        deviceId,
-        error: error instanceof Error ? error.message : String(error)
-      });
+      logger.error('Failed to disconnect device', { service: 'device-integration', deviceId, error: error instanceof Error ? error.message : String(error) });
     }
   };
 
   const healthData = [
-    { label: 'Total Steps Today', value: '8,542', change: '+12%', icon: 'ri-walk-line', color: 'text-green-600', bgColor: 'bg-green-50' },
-    { label: 'Heart Rate Avg', value: '72 bpm', change: 'Normal', icon: 'ri-heart-pulse-line', color: 'text-red-600', bgColor: 'bg-red-50' },
-    { label: 'Sleep Duration', value: '7h 32m', change: '+45m', icon: 'ri-moon-line', color: 'text-purple-600', bgColor: 'bg-purple-50' },
-    { label: 'Calories Burned', value: '2,340', change: '+8%', icon: 'ri-fire-line', color: 'text-orange-600', bgColor: 'bg-orange-50' }
+    { label: 'Total Steps Today', value: realtimeMetrics?.steps ? realtimeMetrics.steps.toLocaleString() : '8,542', change: '+12%', icon: 'ri-walk-line', color: 'text-green-600', bgColor: 'bg-green-50' },
+    { label: 'Heart Rate Avg', value: realtimeMetrics?.heartRate ? `${realtimeMetrics.heartRate} bpm` : '72 bpm', change: 'Normal', icon: 'ri-heart-pulse-line', color: 'text-red-600', bgColor: 'bg-red-50' },
+    { label: 'Sleep Duration', value: realtimeMetrics?.sleep || '7h 32m', change: '+45m', icon: 'ri-moon-line', color: 'text-purple-600', bgColor: 'bg-purple-50' },
+    { label: 'Calories Burned', value: realtimeMetrics?.calories ? realtimeMetrics.calories.toLocaleString() : '2,340', change: '+8%', icon: 'ri-fire-line', color: 'text-orange-600', bgColor: 'bg-orange-50' }
   ];
 
   return (

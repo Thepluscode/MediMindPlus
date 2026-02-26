@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { AuditLog, UserRole } from '../../types/auth';
 import logger from '../../utils/logger';
+import { auditService } from '../../services/api';
 
 // Mock audit logs
 const mockAuditLogs: AuditLog[] = [
@@ -111,10 +112,21 @@ const mockAuditLogs: AuditLog[] = [
 
 const AuditLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>(mockAuditLogs);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'success' | 'failed'>('all');
   const [filterAction, setFilterAction] = useState('all');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+
+  useEffect(() => {
+    auditService.getLogs({ limit: 100 })
+      .then((res) => {
+        const data = res.data?.logs || res.data?.data || res.data;
+        if (Array.isArray(data) && data.length > 0) setLogs(data);
+      })
+      .catch(() => {/* fall back to mock data */})
+      .finally(() => setLoading(false));
+  }, []);
 
   const getActionIcon = (action: string) => {
     if (action.includes('Created')) return 'ri-add-circle-line';
@@ -166,13 +178,27 @@ const AuditLogsPage: React.FC = () => {
     return matchesSearch && matchesStatus && matchesAction;
   });
 
-  const exportLogs = () => {
-    logger.info('Exporting audit logs', {
-      service: 'audit-logs',
-      totalLogs: logs.length,
-      filteredLogs: filteredLogs.length
-    });
-    // Implement export functionality
+  const exportLogs = async () => {
+    logger.info('Exporting audit logs', { service: 'audit-logs', totalLogs: logs.length });
+    try {
+      const res = await auditService.exportLogs();
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Fall back to exporting current view as JSON
+      const blob = new Blob([JSON.stringify(filteredLogs, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
   return (
@@ -319,6 +345,12 @@ const AuditLogsPage: React.FC = () => {
 
         {/* Audit Logs Table */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          {loading && (
+            <div className="flex items-center justify-center py-12 text-gray-500">
+              <i className="ri-loader-4-line animate-spin text-2xl mr-2"></i> Loading audit logs...
+            </div>
+          )}
+          {!loading && (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -387,6 +419,7 @@ const AuditLogsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       </div>
     </div>

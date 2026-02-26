@@ -2,9 +2,18 @@ import React, { useState } from 'react';
 import type { User, TeamMember, InviteRequest, UserRole } from '../../types/auth';
 import { PermissionGuard } from '../../components/feature/PermissionGuard';
 import logger from '../../utils/logger';
+import { authService } from '../../services/auth';
 
-// Mock current user (replace with actual auth context)
-const currentUser: User = {
+// Get real current user from auth service
+const _storedUser = authService.getCurrentUser();
+const currentUser: User = _storedUser ? {
+  id: _storedUser.id || '1',
+  email: _storedUser.email || 'user@healthai.com',
+  name: `${_storedUser.firstName || ''} ${_storedUser.lastName || ''}`.trim() || _storedUser.email,
+  role: (_storedUser.role as UserRole) || 'admin',
+  status: 'active',
+  createdAt: _storedUser.createdAt || '2024-01-01',
+} : {
   id: '1',
   email: 'admin@healthai.com',
   name: 'Admin User',
