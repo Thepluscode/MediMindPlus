@@ -17,7 +17,7 @@ export default function LoginPage() {
             await authService.login(formData.email, formData.password);
             navigate('/dashboard');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+            setError(err.response?.data?.error || err.response?.data?.message || err.message || 'Login failed. Please check your credentials.');
         } finally {
             setLoading(false);
         }

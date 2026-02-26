@@ -34,7 +34,8 @@ export default function RegisterPage() {
             });
             navigate('/dashboard');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Registration failed.');
+            const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Registration failed. Please try again.';
+            setError(msg);
         } finally {
             setLoading(false);
         }
