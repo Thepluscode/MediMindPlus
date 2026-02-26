@@ -17,6 +17,7 @@ import consultationRoutes from './routes/consultations.routes';
 import paymentRoutes from './routes/payments.routes';
 import aiBlockchainRoutes, { setAIBlockchainService } from './routes/aiBlockchain.routes';
 import settingsRoutes from './routes/settings';
+import analyticsRoutes from './routes/analytics';
 import { logger } from './utils/logger';
 import knex from './config/knex';
 import { AIBlockchainHybridService } from './services/AIBlockchainHybridService';
@@ -193,6 +194,22 @@ app.use(`${API_PREFIX}/ai-blockchain`, aiBlockchainRoutes);
 
 // Settings routes (Profile, Password, Privacy, Help, Contact, Legal)
 app.use(`${API_PREFIX}/settings`, settingsRoutes);
+
+// Analytics routes (forecasting, anomaly detection, insights, summary)
+app.use(`${API_PREFIX}/analytics`, analyticsRoutes);
+
+// Audit logs route (basic implementation)
+app.get(`${API_PREFIX}/audit/logs`, authController.authenticate, (req: any, res) => {
+  res.json({
+    success: true,
+    data: {
+      logs: [],
+      total: 0,
+      skip: 0,
+      limit: 50,
+    },
+  });
+});
 
 // Store database reference in app.locals for routes to access
 // app.locals.db = knex; // Commented out - will be set after initialization

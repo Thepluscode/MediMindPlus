@@ -25,10 +25,10 @@ export const healthAnalysisService = {
 
 // Analytics
 export const analyticsService = {
-  getInsights: () => api.get('/api/analytics/insights'),
   getSummary: () => api.get('/api/analytics/summary'),
   getForecast: (data: any) => api.post('/api/analytics/forecast', data),
-  detectAnomalies: (data: any) => api.post('/api/analytics/anomaly-detection', data),
+  detectAnomalies: (data: any) => api.post('/api/analytics/anomalies', data),
+  generateInsights: (healthData: any[]) => api.post('/api/analytics/insights', { healthData }),
 };
 
 // Settings
@@ -53,9 +53,12 @@ export const wearableService = {
 };
 
 // Consultations / Appointments
+const getUserId = () => {
+  try { return JSON.parse(localStorage.getItem('user') || '{}')?.id || ''; } catch { return ''; }
+};
 export const consultationService = {
   book: (data: any) => api.post('/api/consultations/book', data),
-  getList: () => api.get('/api/consultations/patient'),
+  getList: () => api.get(`/api/consultations/patient/${getUserId()}`),
   getById: (id: string) => api.get(`/api/consultations/${id}`),
   cancel: (id: string) => api.put(`/api/consultations/${id}/cancel`),
 };
@@ -63,14 +66,15 @@ export const consultationService = {
 // Revolutionary Features
 export const revolutionaryService = {
   // Virtual Health Twin
-  getTwin: () => api.get('/api/revolutionary/health-twin'),
-  runSimulation: (data: any) => api.post('/api/revolutionary/health-twin/simulate', data),
-  getTwinPredictions: () => api.get('/api/revolutionary/health-twin/predictions'),
+  getTwin: () => { const uid = getUserId(); return api.get(`/api/v1/health-twin/${uid}`); },
+  runSimulation: (data: any) => { const uid = getUserId(); return api.post(`/api/v1/health-twin/${uid}/simulate`, data); },
+  getTwinPredictions: () => { const uid = getUserId(); return api.get(`/api/v1/health-twin/${uid}/predictions`); },
 
   // Longevity / Biological Age
-  getBiologicalAge: () => api.get('/api/revolutionary/longevity/profile'),
-  getAgingHallmarks: () => api.get('/api/revolutionary/longevity/aging-hallmarks'),
-  getTherapies: () => api.get('/api/revolutionary/longevity/therapies'),
+  getBiologicalAge: () => { const uid = getUserId(); return api.get(`/api/v1/longevity/${uid}/biological-age`); },
+  getLongevityProfile: () => { const uid = getUserId(); return api.get(`/api/v1/longevity/${uid}/profile`); },
+  getAgingHallmarks: () => { const uid = getUserId(); return api.get(`/api/v1/longevity/${uid}/aging-hallmarks`); },
+  getTherapies: () => { const uid = getUserId(); return api.get(`/api/v1/longevity/${uid}/therapies`); },
 
   // Drug Interaction (via advanced features)
   checkDrugInteractions: (data: any) => api.post('/api/advanced/drug-interactions', data),

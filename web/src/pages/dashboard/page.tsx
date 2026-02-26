@@ -28,7 +28,7 @@ export default function DashboardPage() {
       .catch(() => {});
 
     // Load AI insights
-    analyticsService.getInsights()
+    analyticsService.getSummary()
       .then((res) => {
         const ins = res.data?.insights || res.data?.data || res.data;
         if (Array.isArray(ins) && ins.length > 0) setLiveInsights(ins.slice(0, 3));

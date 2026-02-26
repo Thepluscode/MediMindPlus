@@ -40,7 +40,7 @@ export default function BiologicalAge() {
   const algorithms = ['Horvath Clock', 'Hannum Clock', 'PhenoAge', 'GrimAge'];
 
   useEffect(() => {
-    revolutionaryService.getBiologicalAge()
+    revolutionaryService.getLongevityProfile()
       .then((res) => {
         const d = res.data?.data || res.data;
         if (d) setBioAgeData(d);

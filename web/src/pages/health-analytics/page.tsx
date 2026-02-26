@@ -21,7 +21,7 @@ export default function HealthAnalytics() {
     setMetricsLoading(true);
     Promise.all([
       healthAnalysisService.getMetrics(days).catch(() => null),
-      analyticsService.getInsights().catch(() => null),
+      analyticsService.getSummary().catch(() => null),
     ]).then(([metricsRes, insightsRes]) => {
       if (metricsRes?.data) {
         const m = metricsRes.data;
