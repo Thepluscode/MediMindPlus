@@ -9,7 +9,7 @@ dotenv.config();
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432'),
-  username: process.env.DB_USERNAME || 'postgres',
+  username: process.env.DB_USER || process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'medimind',
   nodeEnv: process.env.NODE_ENV || 'development'
@@ -18,7 +18,7 @@ const dbConfig = {
 // Get Knex configuration based on environment
 const getKnexConfig = (): Knex.Config => ({
   client: 'pg',
-  connection: {
+  connection: process.env.DATABASE_URL || {
     host: dbConfig.host,
     port: dbConfig.port,
     user: dbConfig.username,
