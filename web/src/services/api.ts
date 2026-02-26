@@ -19,8 +19,8 @@ api.interceptors.request.use(
 
 // Health Analysis
 export const healthAnalysisService = {
-  getMetrics: (days = 30) => api.get(`/api/health-analysis/health-metrics?days=${days}`),
-  saveMetrics: (data: any) => api.post('/api/health-analysis/health-metrics', data),
+  getMetrics: (days = 30) => api.get(`/api/health-metrics?days=${days}`),
+  saveMetrics: (data: any) => api.post('/api/health-metrics', data),
 };
 
 // Analytics
@@ -36,9 +36,9 @@ export const settingsService = {
   getProfile: () => api.get('/api/settings/profile'),
   updateProfile: (data: any) => api.put('/api/settings/profile', data),
   changePassword: (data: any) => api.put('/api/settings/password', data),
-  getPrivacy: () => api.get('/api/settings/privacy'),
-  updatePrivacy: (data: any) => api.put('/api/settings/privacy', data),
-  exportData: () => api.post('/api/settings/export-data'),
+  getPrivacy: () => api.get('/api/settings/privacy/settings'),
+  updatePrivacy: (data: any) => api.put('/api/settings/privacy/settings', data),
+  exportData: () => api.get('/api/settings/privacy/export'),
 };
 
 // Wearables / Device Integration

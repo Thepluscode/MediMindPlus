@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import { RevolutionaryFeaturesController } from '../controllers/RevolutionaryFeaturesController';
-import { authenticateToken } from '../middleware/auth';
+import { authenticate as authenticateToken } from '../middleware/authorization';
 import { validateRequest } from '../middleware/validateRequest';
 
 const router = Router();
