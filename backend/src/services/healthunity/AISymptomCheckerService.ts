@@ -133,10 +133,10 @@ export class AISymptomCheckerService extends EventEmitter {
     }
   };
 
-  constructor(database: any, aiModelService: any) {
+  constructor(database: any, aiModelService?: any) {
     super();
     this.db = database;
-    this.aiModelService = aiModelService;
+    this.aiModelService = aiModelService || null;
   }
 
   /**

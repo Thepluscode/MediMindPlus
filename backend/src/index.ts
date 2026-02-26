@@ -37,7 +37,8 @@ dotenv.config();
 const requiredEnvVars = [
   'JWT_SECRET',
   'JWT_REFRESH_SECRET',
-  'DB_PASSWORD',
+  // DB_PASSWORD is only required if DATABASE_URL is not provided (Railway provides DATABASE_URL)
+  ...(process.env.DATABASE_URL ? [] : ['DB_PASSWORD']),
 ];
 
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
