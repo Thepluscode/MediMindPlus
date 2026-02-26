@@ -1,19 +1,27 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../home/components/Header';
+import { authService } from '../../services/auth';
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'health' | 'appointments' | 'reports'>('overview');
 
-  // Mock user data
+  const currentUser = authService.getCurrentUser();
+  const fullName = currentUser
+    ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.email
+    : 'Guest';
+  const memberSince = currentUser?.createdAt
+    ? new Date(currentUser.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : 'Recently';
+
   const userData = {
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@example.com',
-    memberSince: 'January 2024',
-    plan: 'Premium',
-    biologicalAge: 32,
-    chronologicalAge: 38,
-    healthScore: 87
+    name: fullName,
+    email: currentUser?.email || '',
+    memberSince,
+    plan: 'Free',
+    biologicalAge: null,
+    chronologicalAge: null,
+    healthScore: null
   };
 
   const healthMetrics = [
@@ -131,8 +139,8 @@ export default function DashboardPage() {
                       <i className="ri-heart-pulse-line text-xl text-green-600"></i>
                     </div>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">{userData.healthScore}/100</p>
-                  <p className="text-sm text-green-600 mt-2">↑ 5 points this month</p>
+                  <p className="text-3xl font-bold text-gray-900">{userData.healthScore ?? '—'}{userData.healthScore ? '/100' : ''}</p>
+                  <p className="text-sm text-gray-400 mt-2">Complete your health profile</p>
                 </div>
 
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-scale-in animation-delay-100 hover:shadow-md transition-all duration-300">
@@ -142,8 +150,8 @@ export default function DashboardPage() {
                       <i className="ri-time-line text-xl text-purple-600"></i>
                     </div>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">{userData.biologicalAge} years</p>
-                  <p className="text-sm text-purple-600 mt-2">{userData.chronologicalAge - userData.biologicalAge} years younger!</p>
+                  <p className="text-3xl font-bold text-gray-900">{userData.biologicalAge ?? '—'}{userData.biologicalAge ? ' years' : ''}</p>
+                  <p className="text-sm text-gray-400 mt-2">Run a health assessment</p>
                 </div>
 
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-scale-in animation-delay-200 hover:shadow-md transition-all duration-300">
