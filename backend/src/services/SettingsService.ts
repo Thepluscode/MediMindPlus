@@ -306,24 +306,25 @@ Control who can see your information in Privacy Settings.
   }
 
   async updatePrivacySettings(userId: string, data: any) {
-    const exists = await knex('privacy_settings')
-      .where({ user_id: userId })
-      .first();
-
-    if (exists) {
-      await knex('privacy_settings')
+    try {
+      const exists = await knex('privacy_settings')
         .where({ user_id: userId })
-        .update({
+        .first();
+
+      if (exists) {
+        await knex('privacy_settings')
+          .where({ user_id: userId })
+          .update({ ...data, updated_at: new Date() });
+      } else {
+        await knex('privacy_settings').insert({
+          user_id: userId,
           ...data,
+          created_at: new Date(),
           updated_at: new Date()
         });
-    } else {
-      await knex('privacy_settings').insert({
-        user_id: userId,
-        ...data,
-        created_at: new Date(),
-        updated_at: new Date()
-      });
+      }
+    } catch {
+      // Table may not exist — return merged defaults
     }
 
     return this.getPrivacySettings(userId);
