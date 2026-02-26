@@ -1,17 +1,15 @@
-const express = require('express');
-const path = require('path');
+import express from 'express';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Health check for Railway
 app.get('/health', (_, res) => res.json({ status: 'ok' }));
-
-// Serve static files from the built output
-app.use(express.static(path.join(__dirname, 'out')));
-
-// SPA fallback — return index.html for all unmatched routes
+app.use(express.static(join(__dirname, 'out')));
 app.get('*', (_, res) => {
-  res.sendFile(path.join(__dirname, 'out', 'index.html'));
+  res.sendFile(join(__dirname, 'out', 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
