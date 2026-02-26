@@ -48,37 +48,37 @@ const envSchema = z.object({
   // File Upload
   MAX_FILE_SIZE: z.string().transform(Number).default('10485760'), // 10MB
   UPLOAD_PATH: z.string().default('./uploads'),
-  
+
   // Email Configuration
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.string().transform(Number).optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
   SMTP_FROM: z.string().email().optional(),
-  
+
   // External Services
   ML_SERVICE_URL: z.string().url().default('http://localhost:8001'),
   GOOGLE_CLOUD_PROJECT_ID: z.string().optional(),
   AWS_REGION: z.string().default('us-east-1'),
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
-  
+
   // Healthcare APIs
   EPIC_CLIENT_ID: z.string().optional(),
   EPIC_CLIENT_SECRET: z.string().optional(),
   CERNER_CLIENT_ID: z.string().optional(),
   CERNER_CLIENT_SECRET: z.string().optional(),
-  
+
   // AI/ML Configuration
   OPENAI_API_KEY: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
   GOOGLE_AI_API_KEY: z.string().optional(),
-  
+
   // Monitoring & Logging
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
   SENTRY_DSN: z.string().optional(),
   DATADOG_API_KEY: z.string().optional(),
-  
+
   // Feature Flags
   ENABLE_SWAGGER: z.string().transform(Boolean).default('true'),
   ENABLE_METRICS: z.string().transform(Boolean).default('true'),
@@ -119,7 +119,7 @@ export const config = {
   environment: env.NODE_ENV,
   port: env.PORT,
   apiUrl: env.API_URL || `http://localhost:${env.PORT}`,
-  
+
   // Database
   database: {
     host: env.DB_HOST,
@@ -136,7 +136,7 @@ export const config = {
       idleTimeoutMillis: 30000,
     },
   },
-  
+
   // Redis
   redis: {
     host: env.REDIS_HOST,
@@ -146,7 +146,7 @@ export const config = {
     retryDelayOnFailover: 100,
     maxRetriesPerRequest: 3,
   },
-  
+
   // JWT
   jwt: {
     secret: env.JWT_SECRET,
@@ -154,7 +154,7 @@ export const config = {
     refreshSecret: env.JWT_REFRESH_SECRET,
     refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
   },
-  
+
   // Security
   security: {
     bcryptRounds: env.BCRYPT_ROUNDS,
@@ -162,25 +162,25 @@ export const config = {
     encryptionKey: env.ENCRYPTION_KEY,
     phiEncryptionEnabled: env.PHI_ENCRYPTION_ENABLED,
   },
-  
+
   // CORS
   cors: {
-    allowedOrigins: env.CORS_ORIGINS.split(',').map(origin => origin.trim()),
+    allowedOrigins: (env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:5173').split(',').map((origin: string) => origin.trim()),
   },
-  
+
   // Rate Limiting
   rateLimit: {
     windowMs: env.RATE_LIMIT_WINDOW_MS,
     maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
     enabled: env.ENABLE_RATE_LIMITING,
   },
-  
+
   // File Upload
   upload: {
     maxFileSize: env.MAX_FILE_SIZE,
     uploadPath: env.UPLOAD_PATH,
   },
-  
+
   // Email
   email: {
     host: env.SMTP_HOST,
@@ -189,7 +189,7 @@ export const config = {
     password: env.SMTP_PASSWORD,
     from: env.SMTP_FROM,
   },
-  
+
   // External Services
   services: {
     mlServiceUrl: env.ML_SERVICE_URL,
@@ -198,7 +198,7 @@ export const config = {
     awsAccessKeyId: env.AWS_ACCESS_KEY_ID,
     awsSecretAccessKey: env.AWS_SECRET_ACCESS_KEY,
   },
-  
+
   // Healthcare APIs
   healthcare: {
     epic: {
@@ -210,14 +210,14 @@ export const config = {
       clientSecret: env.CERNER_CLIENT_SECRET,
     },
   },
-  
+
   // AI/ML
   ai: {
     openaiApiKey: env.OPENAI_API_KEY,
     anthropicApiKey: env.ANTHROPIC_API_KEY,
     googleAiApiKey: env.GOOGLE_AI_API_KEY,
   },
-  
+
   // Monitoring
   monitoring: {
     logLevel: env.LOG_LEVEL,
@@ -225,7 +225,7 @@ export const config = {
     datadogApiKey: env.DATADOG_API_KEY,
     enabled: env.ENABLE_METRICS,
   },
-  
+
   // Feature Flags
   features: {
     swagger: env.ENABLE_SWAGGER,
@@ -233,7 +233,7 @@ export const config = {
     auditLogs: env.ENABLE_AUDIT_LOGS,
     rateLimit: env.ENABLE_RATE_LIMITING,
   },
-  
+
   // Compliance
   compliance: {
     hipaa: {
@@ -246,7 +246,7 @@ export const config = {
       deviceIdentifier: env.DEVICE_IDENTIFIER,
     },
   },
-  
+
   // Development helpers
   isDevelopment: env.NODE_ENV === 'development',
   isProduction: env.NODE_ENV === 'production',
@@ -261,9 +261,9 @@ if (config.isProduction) {
     'SESSION_SECRET',
     'ENCRYPTION_KEY',
   ];
-  
+
   const missingVars = requiredProductionVars.filter(varName => !process.env[varName]);
-  
+
   if (missingVars.length > 0) {
     logger.error('Missing required production environment variables', {
       service: 'config',
