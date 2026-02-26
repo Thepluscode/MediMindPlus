@@ -17,6 +17,66 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Response interceptor: auto-refresh token on 401, redirect to login if refresh fails
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (v: any) => void; reject: (e: any) => void }> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(p => error ? p.reject(error) : p.resolve(token));
+  failedQueue = [];
+};
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        // No refresh token — clear session and redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const res = await axios.post(`${API_URL}/api/auth/refresh-token`, { refreshToken });
+        const newToken = res.data.tokens?.accessToken || res.data.token;
+        if (!newToken) throw new Error('No token in refresh response');
+        localStorage.setItem('token', newToken);
+        if (res.data.tokens?.refreshToken) localStorage.setItem('refreshToken', res.data.tokens.refreshToken);
+        api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+        processQueue(null, newToken);
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Health Analysis
 export const healthAnalysisService = {
   getMetrics: (days = 30) => api.get(`/api/health-metrics?days=${days}`),

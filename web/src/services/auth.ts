@@ -26,25 +26,30 @@ export const authService = {
   login: async (email: any, password: any) => {
     const response = await api.post('/api/auth/login', { email, password });
     const token = response.data.token || response.data.tokens?.accessToken;
+    const refreshToken = response.data.refreshToken || response.data.tokens?.refreshToken;
     if (token) {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
+    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
     return response.data;
   },
 
   register: async (userData: any) => {
     const response = await api.post('/api/auth/register', userData);
     const token = response.data.token || response.data.tokens?.accessToken;
+    const refreshToken = response.data.refreshToken || response.data.tokens?.refreshToken;
     if (token) {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
+    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
     return response.data;
   },
 
   logout: () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
   },
 
