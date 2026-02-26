@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../../services/auth';
 import logger from '../../utils/logger';
 
 interface SignInModalProps {
@@ -8,28 +10,60 @@ interface SignInModalProps {
 }
 
 export default function SignInModal({ isOpen, onClose, defaultMode = 'signin' }: SignInModalProps) {
+  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(defaultMode === 'signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setIsSignUp(defaultMode === 'signup');
+      setError('');
     }
   }, [isOpen, defaultMode]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle sign in/sign up logic here
-    logger.info('Auth form submitted', {
-      service: 'auth',
-      mode: isSignUp ? 'signup' : 'signin',
-      email: '[REDACTED]'
-    });
+    setError('');
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        // Split full name into first and last name
+        const nameParts = name.trim().split(/\s+/);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        await authService.register({
+          firstName,
+          lastName,
+          email,
+          password
+        });
+      } else {
+        await authService.login(email, password);
+      }
+
+      logger.info('Auth form submitted successfully', {
+        service: 'auth',
+        mode: isSignUp ? 'signup' : 'signin',
+      });
+
+      onClose();
+      navigate('/dashboard');
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Something went wrong. Please try again.';
+      setError(msg);
+      logger.error('Auth form error', { service: 'auth', error: msg });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -171,11 +205,20 @@ export default function SignInModal({ isOpen, onClose, defaultMode = 'signin' }:
             </div>
           )}
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold rounded-xl hover:shadow-lg hover:scale-[1.02] transition-all whitespace-nowrap cursor-pointer"
+            disabled={loading}
+            className="w-full py-3 bg-gradient-to-r from-blue-600 to-teal-500 text-white font-semibold rounded-xl hover:shadow-lg hover:scale-[1.02] transition-all whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            {isSignUp ? 'Create Account' : 'Sign In'}
+            {loading
+              ? (isSignUp ? 'Creating Account...' : 'Signing In...')
+              : (isSignUp ? 'Create Account' : 'Sign In')}
           </button>
 
           <div className="relative my-6">
