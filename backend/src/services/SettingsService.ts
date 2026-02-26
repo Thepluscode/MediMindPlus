@@ -7,7 +7,7 @@ export class SettingsService {
   async getProfile(userId: string) {
     const [user] = await knex('users')
       .where({ id: userId })
-      .select('id', 'email', 'first_name', 'last_name', 'phone', 'date_of_birth', 'avatar_url', 'created_at', 'updated_at');
+      .select('id', 'email', 'first_name', 'last_name', 'created_at', 'updated_at');
 
     if (!user) {
       throw new Error('User not found');
@@ -282,11 +282,7 @@ Control who can see your information in Privacy Settings.
 
   // Privacy methods
   async getPrivacySettings(userId: string) {
-    const [settings] = await knex('privacy_settings')
-      .where({ user_id: userId })
-      .select('*');
-
-    return settings || {
+    const defaults = {
       user_id: userId,
       share_health_data: false,
       share_with_providers: true,
@@ -294,6 +290,14 @@ Control who can see your information in Privacy Settings.
       marketing_emails: false,
       research_participation: false
     };
+    try {
+      const [settings] = await knex('privacy_settings')
+        .where({ user_id: userId })
+        .select('*');
+      return settings || defaults;
+    } catch {
+      return defaults;
+    }
   }
 
   async updatePrivacySettings(userId: string, data: any) {
