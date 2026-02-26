@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User, TeamMember, InviteRequest, UserRole } from '../../types/auth';
 import { PermissionGuard } from '../../components/feature/PermissionGuard';
 import logger from '../../utils/logger';
 import { authService } from '../../services/auth';
+import { teamService } from '../../services/api';
 
 // Get real current user from auth service
 const _storedUser = authService.getCurrentUser();
@@ -95,7 +96,8 @@ const mockTeamMembers: TeamMember[] = [
 ];
 
 const TeamManagementPage: React.FC = () => {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(mockTeamMembers);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
@@ -107,6 +109,31 @@ const TeamManagementPage: React.FC = () => {
     department: '',
     message: '',
   });
+
+  useEffect(() => {
+    teamService.getMembers()
+      .then((res) => {
+        const members: any[] = res.data?.members || res.data?.data || res.data || [];
+        const mapped: TeamMember[] = members.map((u: any, idx: number) => ({
+          id: String(idx + 1),
+          user: {
+            id: u.id,
+            email: u.email,
+            name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
+            role: (u.role as UserRole) || 'operator',
+            status: u.is_active ? 'active' : 'inactive',
+            createdAt: u.created_at,
+            lastLogin: u.updated_at,
+          },
+          invitedBy: 'System',
+          invitedAt: u.created_at,
+          acceptedAt: u.created_at,
+        }));
+        setTeamMembers(mapped.length > 0 ? mapped : mockTeamMembers);
+      })
+      .catch(() => setTeamMembers(mockTeamMembers))
+      .finally(() => setLoadingMembers(false));
+  }, []);
 
   const getRoleBadgeColor = (role: UserRole) => {
     switch (role) {
@@ -152,6 +179,13 @@ const TeamManagementPage: React.FC = () => {
 
   const handleUpdateRole = () => {
     if (selectedMember) {
+      teamService.updateRole(selectedMember.user.id, selectedMember.user.role)
+        .then(() => {
+          setTeamMembers(prev => prev.map(m =>
+            m.id === selectedMember.id ? selectedMember : m
+          ));
+        })
+        .catch(() => {});
       logger.info('Team member role updated', {
         service: 'team-management',
         userId: selectedMember.user.id,

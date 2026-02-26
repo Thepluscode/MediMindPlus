@@ -109,3 +109,14 @@ export const dashboardService = {
   getWidgetData: (widgetId: string, timeRange?: string) =>
     api.get(`/api/dashboard/${widgetId}/data${timeRange ? `?timeRange=${timeRange}` : ''}`),
 };
+
+// Team Management
+export const teamService = {
+  getMembers: () => api.get('/api/team/members'),
+  updateRole: (userId: string, role: string) => api.put(`/api/team/members/${userId}/role`, { role }),
+};
+
+// Reports
+export const reportsService = {
+  getReports: () => api.get('/api/reports'),
+};

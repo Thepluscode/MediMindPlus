@@ -2,38 +2,47 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../home/components/Header';
 import { authService } from '../../services/auth';
-import { healthAnalysisService, consultationService, analyticsService } from '../../services/api';
+import { healthAnalysisService, consultationService, analyticsService, reportsService } from '../../services/api';
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'health' | 'appointments' | 'reports'>('overview');
-  const [liveMetrics, setLiveMetrics] = useState<Record<string, any>>({});
-  const [liveAppointments, setLiveAppointments] = useState<any[]>([]);
-  const [liveInsights, setLiveInsights] = useState<any[]>([]);
+  const [liveMetrics, setLiveMetrics] = useState<Record<string, any> | null>(null);
+  const [liveAppointments, setLiveAppointments] = useState<any[] | null>(null);
+  const [liveInsights, setLiveInsights] = useState<any[] | null>(null);
+  const [liveReports, setLiveReports] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load health metrics
-    healthAnalysisService.getMetrics(7)
-      .then((res) => {
-        const d = res.data?.data || res.data;
-        if (d && typeof d === 'object') setLiveMetrics(d);
-      })
-      .catch(() => {});
+    Promise.all([
+      healthAnalysisService.getMetrics(7)
+        .then((res) => {
+          const d = res.data?.data || res.data;
+          if (d && typeof d === 'object' && !Array.isArray(d)) setLiveMetrics(d);
+          else if (Array.isArray(d) && d.length > 0) setLiveMetrics(d[0]);
+        })
+        .catch(() => {}),
 
-    // Load upcoming appointments
-    consultationService.getList()
-      .then((res) => {
-        const appts = res.data?.consultations || res.data?.data || res.data;
-        if (Array.isArray(appts) && appts.length > 0) setLiveAppointments(appts.slice(0, 3));
-      })
-      .catch(() => {});
+      consultationService.getList()
+        .then((res) => {
+          const appts = res.data?.consultations || res.data?.data || res.data;
+          setLiveAppointments(Array.isArray(appts) ? appts.slice(0, 3) : []);
+        })
+        .catch(() => setLiveAppointments([])),
 
-    // Load AI insights
-    analyticsService.getSummary()
-      .then((res) => {
-        const ins = res.data?.insights || res.data?.data || res.data;
-        if (Array.isArray(ins) && ins.length > 0) setLiveInsights(ins.slice(0, 3));
-      })
-      .catch(() => {});
+      analyticsService.getSummary()
+        .then((res) => {
+          const ins = res.data?.insights || res.data?.data || res.data;
+          setLiveInsights(Array.isArray(ins) ? ins.slice(0, 3) : []);
+        })
+        .catch(() => setLiveInsights([])),
+
+      reportsService.getReports()
+        .then((res) => {
+          const rpts = res.data?.reports || res.data?.data || res.data;
+          setLiveReports(Array.isArray(rpts) ? rpts : []);
+        })
+        .catch(() => setLiveReports([])),
+    ]).finally(() => setLoading(false));
   }, []);
 
   const currentUser = authService.getCurrentUser();
@@ -58,60 +67,48 @@ export default function DashboardPage() {
   };
 
   const healthMetrics = [
-    { label: 'Heart Rate', value: liveMetrics.heartRate ?? liveMetrics.avgHeartRate ?? '72', unit: 'bpm', status: 'Normal', icon: 'ri-heart-pulse-line', gradient: 'from-rose-500 to-pink-600', bg: 'bg-rose-50', ring: 'ring-rose-100' },
-    { label: 'Blood Pressure', value: liveMetrics.bloodPressure ?? '120/80', unit: 'mmHg', status: 'Optimal', icon: 'ri-pulse-line', gradient: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50', ring: 'ring-blue-100' },
-    { label: 'Sleep Quality', value: liveMetrics.sleepScore ?? '8.2', unit: '/10', status: 'Excellent', icon: 'ri-moon-line', gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', ring: 'ring-violet-100' },
-    { label: 'Activity', value: liveMetrics.dailySteps ? liveMetrics.dailySteps.toLocaleString() : '7,842', unit: 'steps', status: 'Good', icon: 'ri-walk-line', gradient: 'from-emerald-500 to-green-600', bg: 'bg-emerald-50', ring: 'ring-emerald-100' },
-    { label: 'Stress Level', value: liveMetrics.stressLevel ?? 'Low', unit: '', status: 'Good', icon: 'ri-mental-health-line', gradient: 'from-teal-500 to-cyan-600', bg: 'bg-teal-50', ring: 'ring-teal-100' },
-    { label: 'BMI', value: liveMetrics.bmi ?? '22.4', unit: '', status: 'Healthy', icon: 'ri-body-scan-line', gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', ring: 'ring-amber-100' },
+    { label: 'Heart Rate', value: liveMetrics?.heartRate ?? liveMetrics?.avgHeartRate ?? liveMetrics?.heart_rate ?? null, unit: 'bpm', icon: 'ri-heart-pulse-line', gradient: 'from-rose-500 to-pink-600' },
+    { label: 'Blood Pressure', value: liveMetrics?.bloodPressure ?? liveMetrics?.blood_pressure ?? null, unit: 'mmHg', icon: 'ri-pulse-line', gradient: 'from-blue-500 to-indigo-600' },
+    { label: 'Sleep Quality', value: liveMetrics?.sleepScore ?? liveMetrics?.sleep_score ?? null, unit: '/10', icon: 'ri-moon-line', gradient: 'from-violet-500 to-purple-600' },
+    { label: 'Daily Steps', value: liveMetrics?.dailySteps ? liveMetrics.dailySteps.toLocaleString() : liveMetrics?.steps ? Number(liveMetrics.steps).toLocaleString() : null, unit: 'steps', icon: 'ri-walk-line', gradient: 'from-emerald-500 to-green-600' },
+    { label: 'Stress Level', value: liveMetrics?.stressLevel ?? liveMetrics?.stress_level ?? null, unit: '', icon: 'ri-mental-health-line', gradient: 'from-teal-500 to-cyan-600' },
+    { label: 'BMI', value: liveMetrics?.bmi ?? null, unit: '', icon: 'ri-body-scan-line', gradient: 'from-amber-500 to-orange-600' },
   ];
 
-  const defaultAppointments = [
-    { date: 'Feb 15', time: '10:00 AM', type: 'Virtual Consultation', doctor: 'Dr. Emily Chen', specialty: 'General Practice', status: 'confirmed', avatar: 'EC' },
-    { date: 'Feb 22', time: '2:30 PM', type: 'Health Assessment', doctor: 'Dr. Michael Roberts', specialty: 'Cardiology', status: 'pending', avatar: 'MR' },
-    { date: 'Mar 1', time: '11:00 AM', type: 'Follow-up Visit', doctor: 'Dr. Emily Chen', specialty: 'General Practice', status: 'confirmed', avatar: 'EC' },
-  ];
-  const upcomingAppointments = liveAppointments.length > 0
-    ? liveAppointments.map((a: any) => {
-        const start = a.startTime || a.scheduledAt;
-        const d = start ? new Date(start) : null;
-        const providerName = a.provider?.name || a.providerName || 'Dr. Unknown';
-        const initials = providerName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
-        return {
-          date: d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD',
-          time: d ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'TBD',
-          type: a.type || a.consultationType || 'Consultation',
-          doctor: providerName,
-          specialty: a.specialty || a.provider?.specialty || 'General Practice',
-          status: a.status || 'pending',
-          avatar: initials,
-        };
-      })
-    : defaultAppointments;
+  const upcomingAppointments = (liveAppointments ?? []).map((a: any) => {
+    const start = a.startTime || a.scheduledAt || a.scheduled_at;
+    const d = start ? new Date(start) : null;
+    const providerName = a.provider?.name || a.providerName || a.provider_name || 'Provider TBD';
+    const apt_initials = providerName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+    return {
+      date: d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD',
+      time: d ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'TBD',
+      type: a.type || a.consultationType || a.consultation_type || 'Consultation',
+      doctor: providerName,
+      specialty: a.specialty || a.provider?.specialty || 'General Practice',
+      status: a.status || 'pending',
+      avatar: apt_initials,
+    };
+  });
 
-  const recentReports = [
-    { name: 'Biological Age Analysis', date: 'Jan 28, 2024', type: 'PDF', size: '2.4 MB', icon: 'ri-dna-line', color: 'text-indigo-600' },
-    { name: 'Health Risk Assessment', date: 'Jan 20, 2024', type: 'PDF', size: '1.8 MB', icon: 'ri-shield-check-line', color: 'text-emerald-600' },
-    { name: 'Drug Interaction Report', date: 'Jan 15, 2024', type: 'PDF', size: '856 KB', icon: 'ri-capsule-line', color: 'text-amber-600' },
-    { name: 'Mental Health Evaluation', date: 'Jan 10, 2024', type: 'PDF', size: '1.2 MB', icon: 'ri-mental-health-line', color: 'text-violet-600' },
-  ];
+  const aiInsights = (liveInsights ?? []).map((ins: any) => ({
+    title: ins.title || ins.name || 'Health Insight',
+    description: ins.description || ins.message || '',
+    icon: ins.icon || 'ri-lightbulb-line',
+    gradient: ins.color || ins.gradient || 'from-teal-500 to-emerald-500',
+    bg: 'bg-teal-50',
+    badge: ins.badge || ins.change || '',
+    badgeColor: ins.badgeColor || 'bg-teal-100 text-teal-700',
+  }));
 
-  const defaultInsights = [
-    { title: 'Sleep Pattern Improvement', description: 'Your sleep quality improved 15% this month. Keep maintaining your bedtime routine for optimal recovery.', icon: 'ri-moon-line', gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-50', badge: '+15%', badgeColor: 'bg-violet-100 text-violet-700' },
-    { title: 'Activity Goal Streak', description: "You've hit your weekly activity goal 3 weeks running. Your cardiovascular health is trending upward.", icon: 'ri-trophy-line', gradient: 'from-amber-500 to-yellow-500', bg: 'bg-amber-50', badge: '3 weeks', badgeColor: 'bg-amber-100 text-amber-700' },
-    { title: 'Stress Reduction', description: 'Stress levels are down 22% since starting meditation. Consider extending sessions to 15 minutes.', icon: 'ri-mental-health-line', gradient: 'from-teal-500 to-emerald-500', bg: 'bg-teal-50', badge: '-22%', badgeColor: 'bg-teal-100 text-teal-700' },
-  ];
-  const aiInsights = liveInsights.length > 0
-    ? liveInsights.map((ins: any, i: number) => ({
-        title: ins.title || ins.name || 'Health Insight',
-        description: ins.description || ins.message || '',
-        icon: ins.icon || defaultInsights[i % 3].icon,
-        gradient: ins.gradient || defaultInsights[i % 3].gradient,
-        bg: ins.bg || defaultInsights[i % 3].bg,
-        badge: ins.badge || ins.change || '',
-        badgeColor: ins.badgeColor || defaultInsights[i % 3].badgeColor,
-      }))
-    : defaultInsights;
+  const recentReports = (liveReports ?? []).map((r: any) => ({
+    name: r.name || r.title || r.report_type || 'Health Report',
+    date: r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown date',
+    type: r.format || r.type || 'PDF',
+    size: r.size || r.file_size || '—',
+    icon: 'ri-file-chart-line',
+    color: 'text-indigo-600',
+  }));
 
   const quickActions = [
     { label: 'Book Appointment', description: 'Schedule a visit', icon: 'ri-calendar-check-line', gradient: 'from-indigo-500 to-blue-600', link: '/book-appointment' },
@@ -275,6 +272,14 @@ export default function DashboardPage() {
                   <i className="ri-sparkling-2-line text-violet-500"></i>
                   AI-Powered Insights
                 </h2>
+                {!loading && aiInsights.length === 0 ? (
+                  <div className="card-premium p-8 text-center">
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center mb-3">
+                      <i className="ri-sparkling-2-line text-2xl text-violet-400"></i>
+                    </div>
+                    <p className="text-slate-600 font-medium text-sm">Insights will appear once you have health data recorded.</p>
+                  </div>
+                ) : (
                 <div className="space-y-3">
                   {aiInsights.map((insight, i) => (
                     <div
@@ -300,6 +305,7 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
+                )}
               </div>
 
               {/* Admin Quick Access */}
@@ -340,28 +346,54 @@ export default function DashboardPage() {
                   <i className="ri-heart-pulse-line text-rose-500"></i>
                   Current Health Metrics
                 </h2>
-                <div className="grid md:grid-cols-3 gap-5">
-                  {healthMetrics.map((metric, i) => (
-                    <div key={i} className="card-gradient-border p-6 animate-scale-in" style={{ animationDelay: `${i * 80}ms` }}>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${metric.gradient} flex items-center justify-center`}>
-                          <i className={`${metric.icon} text-xl text-white`}></i>
-                        </div>
-                        <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full ring-1 ring-emerald-200">
-                          {metric.status}
-                        </span>
+                {loading ? (
+                  <div className="grid md:grid-cols-3 gap-5">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="card-gradient-border p-6 animate-pulse">
+                        <div className="h-11 w-11 rounded-xl bg-slate-200 mb-4"></div>
+                        <div className="h-3 w-24 bg-slate-200 rounded mb-2"></div>
+                        <div className="h-8 w-16 bg-slate-200 rounded"></div>
                       </div>
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{metric.label}</p>
-                      <p className="text-3xl font-extrabold text-slate-900">
-                        {metric.value}
-                        <span className="text-sm font-medium text-slate-400 ml-1">{metric.unit}</span>
-                      </p>
+                    ))}
+                  </div>
+                ) : healthMetrics.every(m => m.value === null) ? (
+                  <div className="card-gradient-border p-10 text-center">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-rose-100 to-pink-100 flex items-center justify-center mb-4">
+                      <i className="ri-heart-pulse-line text-3xl text-rose-400"></i>
                     </div>
-                  ))}
-                </div>
+                    <p className="text-slate-700 font-semibold mb-1">No health metrics recorded yet</p>
+                    <p className="text-sm text-slate-400 mb-4">Connect a wearable device or log metrics manually to see your data here.</p>
+                    <Link to="/device-integration" className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-sm font-semibold rounded-xl hover:shadow-lg transition-all">
+                      <i className="ri-link-m"></i> Connect Device
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-3 gap-5">
+                    {healthMetrics.map((metric, i) => (
+                      <div key={i} className="card-gradient-border p-6 animate-scale-in" style={{ animationDelay: `${i * 80}ms` }}>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${metric.gradient} flex items-center justify-center`}>
+                            <i className={`${metric.icon} text-xl text-white`}></i>
+                          </div>
+                          {metric.value !== null && (
+                            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full ring-1 ring-emerald-200">Recorded</span>
+                          )}
+                        </div>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{metric.label}</p>
+                        {metric.value !== null ? (
+                          <p className="text-3xl font-extrabold text-slate-900">
+                            {metric.value}
+                            <span className="text-sm font-medium text-slate-400 ml-1">{metric.unit}</span>
+                          </p>
+                        ) : (
+                          <p className="text-sm text-slate-400 italic">No data</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Trends Placeholder */}
               <div className="card-gradient-border p-8">
                 <h2 className="text-lg font-bold text-slate-800 mb-6">Health Trends — Last 30 Days</h2>
                 <div className="h-64 rounded-2xl bg-gradient-to-br from-slate-50 to-indigo-50/50 flex items-center justify-center">
@@ -369,8 +401,10 @@ export default function DashboardPage() {
                     <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center mb-3">
                       <i className="ri-line-chart-line text-3xl text-indigo-400"></i>
                     </div>
-                    <p className="text-slate-500 font-medium">Interactive charts coming soon</p>
-                    <p className="text-xs text-slate-400 mt-1">Connect a wearable to start tracking</p>
+                    <p className="text-slate-500 font-medium">View detailed trends in Health Analytics</p>
+                    <Link to="/health-analytics" className="text-xs text-indigo-500 hover:text-indigo-700 mt-1 inline-flex items-center gap-1">
+                      Open Health Analytics <i className="ri-arrow-right-line"></i>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -392,23 +426,46 @@ export default function DashboardPage() {
                   Book New
                 </Link>
               </div>
-              <div className="space-y-3">
-                {upcomingAppointments.map((apt, i) => (
-                  <div key={i} className="card-premium p-5 flex items-center justify-between animate-fade-in-left" style={{ animationDelay: `${i * 80}ms` }}>
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-xs">{apt.avatar}</span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-slate-900 text-sm">{apt.type}</h3>
-                        <p className="text-sm text-slate-600">{apt.doctor} · <span className="text-slate-400">{apt.specialty}</span></p>
-                        <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
-                          <i className="ri-calendar-event-line"></i>
-                          {apt.date} at {apt.time}
-                        </p>
+              {loading ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="card-premium p-5 animate-pulse flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-slate-200 flex-shrink-0"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-48 bg-slate-200 rounded"></div>
+                        <div className="h-3 w-32 bg-slate-200 rounded"></div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                  ))}
+                </div>
+              ) : upcomingAppointments.length === 0 ? (
+                <div className="card-premium p-10 text-center">
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-indigo-100 to-blue-100 flex items-center justify-center mb-4">
+                    <i className="ri-calendar-line text-3xl text-indigo-400"></i>
+                  </div>
+                  <p className="text-slate-700 font-semibold mb-1">No upcoming appointments</p>
+                  <p className="text-sm text-slate-400 mb-4">Book a consultation with a healthcare provider.</p>
+                  <Link to="/book-appointment" className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-sm font-semibold rounded-xl hover:shadow-lg transition-all">
+                    <i className="ri-calendar-check-line"></i> Book Appointment
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {upcomingAppointments.map((apt, i) => (
+                    <div key={i} className="card-premium p-5 flex items-center justify-between animate-fade-in-left" style={{ animationDelay: `${i * 80}ms` }}>
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                          <span className="text-white font-bold text-xs">{apt.avatar}</span>
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-sm">{apt.type}</h3>
+                          <p className="text-sm text-slate-600">{apt.doctor} · <span className="text-slate-400">{apt.specialty}</span></p>
+                          <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                            <i className="ri-calendar-event-line"></i>
+                            {apt.date} at {apt.time}
+                          </p>
+                        </div>
+                      </div>
                       <span className={`text-xs font-semibold px-3 py-1 rounded-full ${apt.status === 'confirmed'
                           ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
                           : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
@@ -416,9 +473,9 @@ export default function DashboardPage() {
                         {apt.status === 'confirmed' ? '✓ Confirmed' : '⏳ Pending'}
                       </span>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -428,25 +485,47 @@ export default function DashboardPage() {
                 <i className="ri-file-chart-line text-indigo-500"></i>
                 Recent Reports
               </h2>
-              <div className="space-y-3">
-                {recentReports.map((report, i) => (
-                  <div key={i} className="card-premium p-5 flex items-center justify-between group animate-fade-in-left" style={{ animationDelay: `${i * 80}ms` }}>
-                    <div className="flex items-center gap-4">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center ring-1 ring-slate-200">
-                        <i className={`${report.icon} text-xl ${report.color}`}></i>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-slate-900 text-sm">{report.name}</h3>
-                        <p className="text-xs text-slate-400 mt-0.5">{report.date} · {report.size}</p>
+              {loading ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="card-premium p-5 animate-pulse flex items-center gap-4">
+                      <div className="w-11 h-11 rounded-xl bg-slate-200 flex-shrink-0"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-48 bg-slate-200 rounded"></div>
+                        <div className="h-3 w-24 bg-slate-200 rounded"></div>
                       </div>
                     </div>
-                    <button className="px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer flex items-center gap-1.5">
-                      <i className="ri-download-line"></i>
-                      Download
-                    </button>
+                  ))}
+                </div>
+              ) : recentReports.length === 0 ? (
+                <div className="card-premium p-10 text-center">
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center mb-4">
+                    <i className="ri-file-chart-line text-3xl text-indigo-400"></i>
                   </div>
-                ))}
-              </div>
+                  <p className="text-slate-700 font-semibold mb-1">No reports generated yet</p>
+                  <p className="text-sm text-slate-400">Reports are generated when you complete health assessments.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentReports.map((report, i) => (
+                    <div key={i} className="card-premium p-5 flex items-center justify-between group animate-fade-in-left" style={{ animationDelay: `${i * 80}ms` }}>
+                      <div className="flex items-center gap-4">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center ring-1 ring-slate-200">
+                          <i className={`${report.icon} text-xl ${report.color}`}></i>
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-900 text-sm">{report.name}</h3>
+                          <p className="text-xs text-slate-400 mt-0.5">{report.date} · {report.size}</p>
+                        </div>
+                      </div>
+                      <button className="px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 cursor-pointer flex items-center gap-1.5">
+                        <i className="ri-download-line"></i>
+                        Download
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

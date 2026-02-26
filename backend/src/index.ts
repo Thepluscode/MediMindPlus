@@ -219,6 +219,92 @@ app.use(`${API_PREFIX}/settings`, settingsRoutes);
 // Analytics routes (forecasting, anomaly detection, insights, summary)
 app.use(`${API_PREFIX}/analytics`, analyticsRoutes);
 
+// ============================================================================
+// ANALYTICS SUMMARY — override the analytics router's unauthenticated handler
+// ============================================================================
+app.get(`${API_PREFIX}/analytics/summary`, authController.authenticate, async (req: any, res) => {
+  const userId = req.user?.id;
+  try {
+    // Pull the last 30 days of health metrics for this user
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const metrics = await knex('health_metrics')
+      .where({ user_id: userId })
+      .where('recorded_at', '>=', since)
+      .orderBy('recorded_at', 'desc')
+      .select('*')
+      .catch(() => [] as any[]);
+
+    const count = metrics.length;
+    const avgHR  = count ? Math.round(metrics.filter((m: any) => m.heart_rate).reduce((s: number, m: any) => s + (m.heart_rate || 0), 0) / (metrics.filter((m: any) => m.heart_rate).length || 1)) : null;
+    const avgSteps = count ? Math.round(metrics.filter((m: any) => m.steps).reduce((s: number, m: any) => s + (m.steps || 0), 0) / (metrics.filter((m: any) => m.steps).length || 1)) : null;
+
+    const insights = count > 0 ? [
+      { title: 'Health Tracking Active', description: `You have ${count} health records in the last 30 days. Keep logging to improve your insights.`, icon: 'ri-heart-pulse-line', color: 'from-rose-500 to-pink-600' },
+      avgHR ? { title: 'Average Heart Rate', description: `Your average resting heart rate is ${avgHR} bpm over the last 30 days.`, icon: 'ri-heart-line', color: 'from-blue-500 to-indigo-600' } : null,
+      avgSteps ? { title: 'Daily Steps', description: `You averaged ${avgSteps.toLocaleString()} steps per day this month. Aim for 10,000 for optimal health.`, icon: 'ri-walk-line', color: 'from-emerald-500 to-green-600' } : null,
+    ].filter(Boolean) : [];
+
+    res.json({
+      success: true,
+      insights,
+      summary: {
+        totalRecords: count,
+        avgHeartRate: avgHR,
+        avgSteps,
+        period: '30d',
+      },
+    });
+  } catch {
+    res.json({ success: true, insights: [], summary: { totalRecords: 0 } });
+  }
+});
+
+// ============================================================================
+// TEAM MANAGEMENT — list users, update role
+// ============================================================================
+app.get(`${API_PREFIX}/team/members`, authController.authenticate, async (req: any, res) => {
+  try {
+    const members = await knex('users')
+      .select('id', 'email', 'first_name', 'last_name', 'role', 'is_active', 'created_at', 'updated_at')
+      .orderBy('created_at', 'asc');
+    res.json({ success: true, members });
+  } catch {
+    res.json({ success: true, members: [] });
+  }
+});
+
+app.put(`${API_PREFIX}/team/members/:userId/role`, authController.authenticate, async (req: any, res) => {
+  const { userId } = req.params;
+  const { role } = req.body;
+  const validRoles = ['admin', 'manager', 'operator', 'patient', 'provider'];
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ success: false, error: 'Invalid role' });
+  }
+  try {
+    await knex('users').where({ id: userId }).update({ role, updated_at: new Date() });
+    res.json({ success: true, message: 'Role updated' });
+  } catch {
+    res.status(500).json({ success: false, error: 'Failed to update role' });
+  }
+});
+
+// ============================================================================
+// REPORTS — list user's generated reports
+// ============================================================================
+app.get(`${API_PREFIX}/reports`, authController.authenticate, async (req: any, res) => {
+  const userId = req.user?.id;
+  try {
+    const rows = await knex('reports')
+      .where({ user_id: userId })
+      .orderBy('created_at', 'desc')
+      .select('*')
+      .catch(() => [] as any[]);
+    res.json({ success: true, reports: rows });
+  } catch {
+    res.json({ success: true, reports: [] });
+  }
+});
+
 // Audit logs route (basic implementation)
 app.get(`${API_PREFIX}/audit/logs`, authController.authenticate, (req: any, res) => {
   res.json({
