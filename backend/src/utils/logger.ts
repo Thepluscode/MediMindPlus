@@ -54,7 +54,7 @@ const hipaaCompliantFormat = printf(({ level, message, timestamp, service, reque
     service: service || 'medimind-backend',
     message,
     requestId,
-    userId: userId ? `user_${hashUserId(userId)}` : undefined,
+    userId: userId ? `user_${hashUserId(userId as string)}` : undefined,
     ...sanitizedMeta
   };
 
@@ -154,14 +154,12 @@ const logger = winston.createLogger({
   exitOnError: false,
 });
 
-// If we're not in production then log to the `console`
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(
-    new winston.transports.Console({
-      format: consoleFormat,
-    })
-  );
-}
+// Always log to console so Railway can capture the logs properly
+logger.add(
+  new winston.transports.Console({
+    format: process.env.NODE_ENV === 'production' ? hipaaCompliantFormat : consoleFormat,
+  })
+);
 
 // Create a stream object with a 'write' function that will be used by `morgan`
 export const stream = {

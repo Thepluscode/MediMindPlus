@@ -43,6 +43,7 @@ const requiredEnvVars = [
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {
+  console.error(`CRITICAL: Missing required environment variables: ${missingEnvVars.join(', ')}`);
   logger.error('CRITICAL: Missing required environment variables:', {
     missing: missingEnvVars,
     hint: 'Run ./generate_secrets.sh to generate secure secrets, then copy to .env file'
@@ -52,11 +53,13 @@ if (missingEnvVars.length > 0) {
 
 // Validate JWT_SECRET strength (minimum 32 characters)
 if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+  console.error('CRITICAL: JWT_SECRET must be at least 32 characters long for security');
   logger.error('CRITICAL: JWT_SECRET must be at least 32 characters long for security');
   process.exit(1);
 }
 
 if (process.env.JWT_REFRESH_SECRET && process.env.JWT_REFRESH_SECRET.length < 32) {
+  console.error('CRITICAL: JWT_REFRESH_SECRET must be at least 32 characters long for security');
   logger.error('CRITICAL: JWT_REFRESH_SECRET must be at least 32 characters long for security');
   process.exit(1);
 }
@@ -252,10 +255,10 @@ const startServer = async () => {
   try {
     // Initialize TypeORM connection (for existing ORM usage)
     await initializeDatabase();
-    
+
     // Initialize Knex.js connection (for migrations and raw queries)
     await knex.initialize();
-    
+
     // Run database migrations
     if (process.env.RUN_MIGRATIONS === 'true') {
       logger.info('Running database migrations...');
@@ -288,7 +291,7 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-      
+
       // Log database connection status
       logger.info('Database connections initialized:');
       logger.info(`- TypeORM: Connected to ${process.env.DB_NAME || 'medimind'} database`);
