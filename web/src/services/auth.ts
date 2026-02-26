@@ -23,19 +23,21 @@ api.interceptors.request.use(
 );
 
 export const authService = {
-  login: async (email, password) => {
+  login: async (email: any, password: any) => {
     const response = await api.post('/api/auth/login', { email, password });
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+    const token = response.data.token || response.data.tokens?.accessToken;
+    if (token) {
+      localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
     return response.data;
   },
 
-  register: async (userData) => {
+  register: async (userData: any) => {
     const response = await api.post('/api/auth/register', userData);
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+    const token = response.data.token || response.data.tokens?.accessToken;
+    if (token) {
+      localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
     return response.data;
